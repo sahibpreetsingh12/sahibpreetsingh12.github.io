@@ -1,0 +1,49 @@
+# Site basics
+title: "Sahibpreet Singh — LLM Systems Notes"
+tagline: "Practical notes on LLM inference, RAG evaluation, and Triton kernels."
+description: "Measurement-driven write-ups on LLM systems: throughput, latency, RAG quality, and custom kernels."
+url: "https://sahibpreetsingh12.github.io"
+baseurl: ""   # leave empty for user site
+
+author:
+  name: "Sahibpreet Singh"
+  email: "ss9334931@gmail.com"
+  github: "sahibpreetsingh12"
+
+# Theme
+remote_theme: cotes2020/jekyll-theme-chirpy
+
+# Plugins that GitHub Pages supports
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+  - jekyll-remote-theme
+
+# Navigation (optional quick links)
+nav:
+  - title: Home
+    url: /
+  - title: Posts
+    url: /posts/
+  - title: About
+    url: /#about
+
+# Social (used by the theme/SEO)
+social:
+  name: "Sahibpreet Singh"
+  links:
+    - "https://github.com/sahibpreetsingh12"
+
+# RSS/SEO
+feed:
+  path: feed.xml
+
+# Comments (enable later if you want giscus)
+comments:
+  provider: false   # set to "giscus" later
+
+# Build
+markdown: kramdown
+highlighter: rouge
+
