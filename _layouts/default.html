@@ -312,16 +312,17 @@
 <body>
   <!-- header (same as your index) -->
   <header class="header">
-    <div class="container">
-      <div class="header-content">
-        <div class="logo">{{ site.title }}</div>
-        <button class="theme-toggle" onclick="toggleTheme()">
-          <i class="fas fa-moon" id="theme-icon"></i>
-          <span id="theme-text">Dark</span>
-        </button>
-      </div>
+  <div class="container">
+    <div class="header-content">
+      <a class="logo" href="{{ '/' | relative_url }}">{{ site.title }}</a>
+      <button class="theme-toggle" onclick="toggleTheme()">
+        <i class="fas fa-moon" id="theme-icon"></i>
+        <span id="theme-text">Dark</span>
+      </button>
     </div>
-  </header>
+  </div>
+</header>
+
 
   {{ content }}
 
