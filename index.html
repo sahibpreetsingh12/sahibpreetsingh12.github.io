@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
+---
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -404,28 +409,37 @@
     </section> -->
 
     <section class="section">
-  <div class="container">
-    <h2><i class="fas fa-blog"></i> Latest Posts</h2>
-    <p>My digital lab notebook documenting the journey from "Hey, this LLM thing is cool" to "Here's how we deployed it at enterprise scale."</p>
+    <div class="container">
+        <h2><i class="fas fa-blog"></i> Latest Posts</h2>
+        <p>My digital lab notebook documenting the journey from "Hey, this LLM thing is cool" to "Here's how we deployed it at enterprise scale."</p>
 
-    <div class="posts-grid">
-      {% for post in site.posts %}
-        <div class="post-card">
-          <div class="post-date">{{ post.date | date: "%B %d, %Y" }}</div>
-          <h3 class="post-title">
-            <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
-          </h3>
-          <p class="post-excerpt">{{ post.description | default: post.excerpt }}</p>
-          <div class="post-tags">
-            {% for tag in post.tags %}
-              <span class="tag">{{ tag }}</span>
+        {% if site.posts and site.posts != empty %}
+        <div class="posts-grid">
+            {% for post in site.posts limit:6 %}
+            <a class="post-card" href="{{ post.url | relative_url }}">
+                <div class="post-date">{{ post.date | date: "%B %d, %Y" }}</div>
+                <h3 class="post-title">{{ post.title }}</h3>
+                <p class="post-excerpt">{{ post.description | default: post.excerpt | strip_html | truncate: 160 }}</p>
+                {% if post.tags %}
+                <div class="post-tags">
+                    {% for tag in post.tags %}
+                    <span class="tag">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </a>
             {% endfor %}
-          </div>
         </div>
-      {% endfor %}
+        {% else %}
+        <div class="loading"><i class="fas fa-spinner fa-spin"></i> No posts yet.</div>
+        {% endif %}
+
+        <p style="text-align:center; margin-top:2rem;">
+        <a class="badge" href="{{ '/posts/' | relative_url }}">View All Posts</a>
+        </p>
     </div>
-  </div>
-</section>
+    </section>
+
 
 
     <!-- Contact Section -->
