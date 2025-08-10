@@ -256,13 +256,7 @@ This is the foundation of modern GPU computing, and why libraries like Unsloth c
 
 Now that we understand the fundamentals—programs, tiles, offsets, masks, and memory operations—we can start building more complex kernels.
 
-In Chapter 2, we'll explore:
-- **2D grids**: How matrix operations work
-- **Memory patterns**: Why some access patterns are faster than others
-- **Fusing operations**: Combining multiple computations in one kernel
 
 The journey into parallel computing has just begun. Every time I write a Triton kernel, I'm getting closer to understanding how the masters of optimization think.
 
 ---
-
-*What questions do you have about parallel programming? What would you want to optimize first? I'd love to hear your thoughts as we explore this together.*
