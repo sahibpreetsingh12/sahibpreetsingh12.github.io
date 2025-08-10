@@ -1,12 +1,71 @@
+# # Site settings
+# title: Sahibpreet Singh
+# description: "GenAI Consultant building production AI systems that actually work"
+# url: "https://sahibpreetsingh12.github.io"
+# baseurl: ""
+
+# # Author information
+# author:
+#   name: Sahibpreet Singh
+#   email: ss9334931@gmail.com
+#   linkedin: https://www.linkedin.com/in/sahibpreetsinghh/
+#   github: https://github.com/sahibpreetsingh12
+#   kaggle: https://www.kaggle.com/sahib12
+
+# # Build settings
+# markdown: kramdown
+# highlighter: rouge
+# permalink: /posts/:title/
+
+# # Plugins (only use what GitHub Pages supports)
+# plugins:
+#   - jekyll-feed
+#   - jekyll-sitemap
+#   - jekyll-seo-tag
+
+# # DON'T use any theme - we're using custom HTML
+# # Remove any theme or remote_theme lines
+
+# # Collections
+# collections:
+#   posts:
+#     output: true
+#     permalink: /posts/:slug/
+
+# # Defaults
+# defaults:
+#   - scope:
+#       path: ""
+#       type: "posts"
+#     values:
+#       layout: "post"
+#       author: "Sahibpreet Singh"
+
+# # Exclude files from processing
+# exclude:
+#   - README.md
+#   - Gemfile
+#   - Gemfile.lock
+#   - node_modules
+#   - vendor
+#   - .sass-cache
+#   - .jekyll-cache
+#   - .git
+
+# # Include files
+# include:
+#   - _posts
+#   - assets
 # Site settings
-title: Sahibpreet Singh
+title: "Sahibpreet Singh"
 description: "GenAI Consultant building production AI systems that actually work"
 url: "https://sahibpreetsingh12.github.io"
-baseurl: ""
+baseurl: ""         # keep empty for USERNAME.github.io
+timezone: Asia/Kolkata
 
 # Author information
 author:
-  name: Sahibpreet Singh
+  name: "Sahibpreet Singh"
   email: ss9334931@gmail.com
   linkedin: https://www.linkedin.com/in/sahibpreetsinghh/
   github: https://github.com/sahibpreetsingh12
@@ -15,30 +74,21 @@ author:
 # Build settings
 markdown: kramdown
 highlighter: rouge
-permalink: /posts/:title/
 
-# Plugins (only use what GitHub Pages supports)
+# Plugins (GitHub Pages–supported only)
 plugins:
   - jekyll-feed
   - jekyll-sitemap
   - jekyll-seo-tag
 
-# DON'T use any theme - we're using custom HTML
-# Remove any theme or remote_theme lines
-
-# Collections
-collections:
-  posts:
-    output: true
-    permalink: /posts/:slug/
-
-# Defaults
+# Defaults (make posts use the /posts/slug/ pattern)
 defaults:
   - scope:
       path: ""
       type: "posts"
     values:
       layout: "post"
+      permalink: "/posts/:slug/"
       author: "Sahibpreet Singh"
 
 # Exclude files from processing
@@ -51,8 +101,3 @@ exclude:
   - .sass-cache
   - .jekyll-cache
   - .git
-
-# Include files
-include:
-  - _posts
-  - assets
