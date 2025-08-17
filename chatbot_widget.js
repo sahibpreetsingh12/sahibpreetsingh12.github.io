@@ -567,7 +567,7 @@ class SahibpreetChatbot {
             return;
         }
         
-        // Try to call Groq API directly (backend not needed for GitHub Pages)
+        // Try to call Groq API directly, fallback to structured responses if fails
         try {
             const response = await this.callGroqDirect(message);
             this.hideTyping();
@@ -576,9 +576,9 @@ class SahibpreetChatbot {
             
         } catch (error) {
             console.error('Groq API error:', error);
-            // Only use fallback for actual errors
+            // Use structured fallback responses (better than generic error)
             this.hideTyping();
-            this.addMessage("I'm having trouble processing your question right now. Please try again in a moment.", 'bot');
+            this.addMessage(this.getFallbackResponse(message), 'bot');
             document.getElementById('chat-suggestions').innerHTML = '';
         }
     }
@@ -700,6 +700,7 @@ Novel insights into subword optimization for production LLMs
 
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
+            mode: 'cors',
             headers: {
                 'Authorization': `Bearer ${GROQ_API_KEY}`,
                 'Content-Type': 'application/json',
@@ -744,26 +745,43 @@ Only answer questions about Sahibpreet Singh based on this resume information. F
         
         // Experience questions
         if (messageLower.includes('experience') || messageLower.includes('work') || messageLower.includes('job') || messageLower.includes('career')) {
-            return `Sahibpreet Singh is currently a GenAI Consultant at CGI where he has delivered significant impact:
+            return `Sahibpreet Singh is currently a **GenAI Consultant at CGI** where he has delivered significant impact:
 
-• Architected Agentic RAG systems resulting in $700K project wins
-• Developed Zero-Trust RAG systems achieving 65% faster recruitment processes  
-• Optimized ML pipelines with 31% performance improvements using Databricks + PySpark
+• Architected Agentic RAG systems resulting in **$700K project wins**
+• Developed Zero-Trust RAG systems achieving **65% faster recruitment processes**  
+• Optimized ML pipelines with **31% performance improvements** using Databricks + PySpark
 • Led cross-functional teams implementing enterprise AI solutions
 
-He previously worked at AI Talentflow, Tatras Data, and ZS Associates, consistently delivering high-impact AI/ML solutions.`;
+**Previous Experience:**
+• **GenAI Engineer** at AI Talentflow (2023-2024)
+• **Data Scientist** at Tatras Data (2022-2023)  
+• **ML Engineer** at ZS Associates (2021-2022)
+
+Consistently delivering high-impact AI/ML solutions across all roles.`;
         }
         
         // Skills questions
         if (messageLower.includes('skill') || messageLower.includes('technology') || messageLower.includes('technical') || messageLower.includes('programming')) {
             return `Sahibpreet Singh's technical expertise includes:
 
-**AI/ML:** PyTorch, Transformers, Langchain, LlamaIndex
-**Agentic AI:** CrewAI, Langgraph, Autogen, SmolAgents  
-**Cloud:** Azure (Promptflow, ML Studio), AWS (ECS, Lambda, SageMaker)
-**Data:** Databricks, PySpark, Neo4j, MongoDB
-**DevOps:** Docker, Terraform, Kubernetes, GitHub Actions
-**Languages:** Python, CUDA, SQL, JavaScript
+**AI/ML Frameworks:**
+• PyTorch, Transformers, Langchain, LlamaIndex
+
+**Agentic AI:**
+• CrewAI, Langgraph, Autogen, SmolAgents  
+
+**Cloud Platforms:**
+• Azure (Promptflow, ML Studio, Key Vault)
+• AWS (ECS, Lambda, SageMaker)
+
+**Data Engineering:**
+• Databricks, PySpark, Neo4j, MongoDB, CosmosDB
+
+**DevOps & Infrastructure:**
+• Docker, Terraform, Kubernetes, GitHub Actions
+
+**Programming Languages:**
+• Python, CUDA, SQL, JavaScript
 
 He specializes in production-scale AI systems and custom CUDA kernel development.`;
         }
@@ -782,12 +800,22 @@ He's currently pursuing advanced AI/ML studies to stay at the forefront of rapid
         if (messageLower.includes('project') || messageLower.includes('built') || messageLower.includes('developed')) {
             return `Sahibpreet Singh's key projects include:
 
+**Enterprise AI Systems:**
 • **Zero-Trust RAG System:** Enterprise AI security solution with Azure Key Vault integration
-• **Custom CUDA Kernels:** GPU optimization for LLM inference using Triton
-• **Resume-2-ResumeRAG:** Production GenAI system deployed on AWS ECS
-• **Tokenizer Fertility Research:** Novel insights into subword optimization
+• **Resume-2-ResumeRAG:** Production GenAI system deployed on AWS ECS generating **$15K revenue increase**
 
-These projects demonstrate his ability to deliver enterprise-scale AI solutions with real business value.`;
+**Performance Optimization:**
+• **Custom CUDA Kernels:** GPU optimization for LLM inference using Triton
+• **ML Pipeline Optimization:** **31% performance improvement** using Databricks + PySpark
+
+**Research Projects:**
+• **Tokenizer Fertility Research:** Novel insights into subword optimization for production LLMs
+
+**Business Impact:**
+• Delivered **$700K+ project value** through innovative AI systems
+• Achieved **65% efficiency improvements** in recruitment processes
+
+These projects demonstrate his ability to deliver enterprise-scale AI solutions with measurable business value.`;
         }
         
         // Contact questions
