@@ -14,6 +14,7 @@ chatbot/.env*
 **/secrets/
 **/*_key.txt
 **/*_secret.txt
+config.js
 
 # IDE files
 .vscode/
