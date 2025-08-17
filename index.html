@@ -191,9 +191,10 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
         /* Cards */
         .cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 2rem;
             margin-top: 2rem;
+            align-items: start;
         }
 
         .card {
@@ -479,6 +480,9 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
             position: relative;
             border: 1px solid var(--border-color);
             background: linear-gradient(135deg, var(--card-bg), transparent);
+            height: fit-content;
+            display: flex;
+            flex-direction: column;
         }
 
         .card-header {
