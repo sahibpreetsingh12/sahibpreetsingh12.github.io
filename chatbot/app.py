@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 """
-Resume-powered Chatbot API
-A FastAPI-based chatbot that answers questions about Sahibpreet Singh using RAG on his resume.
+Simple Resume Chatbot API
+A FastAPI-based chatbot that answers questions about Sahibpreet Singh using Groq LLM.
 """
 
-import os
-import json
 import logging
-from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Optional
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -16,9 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # Local imports
-from resume_processor import ResumeProcessor
-from vector_store import VectorStore
-from chatbot_engine import ChatbotEngine
+from simple_chatbot import SimpleChatbot
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -27,8 +22,8 @@ logger = logging.getLogger(__name__)
 # Initialize FastAPI app
 app = FastAPI(
     title="Sahibpreet Singh - Personal Chatbot",
-    description="AI-powered chatbot that knows everything about Sahibpreet Singh",
-    version="1.0.0"
+    description="Simple AI-powered chatbot using Groq LLM",
+    version="2.0.0"
 )
 
 # Add CORS middleware
@@ -43,44 +38,24 @@ app.add_middleware(
 # Request/Response models
 class ChatRequest(BaseModel):
     message: str
-    conversation_id: Optional[str] = None
 
 class ChatResponse(BaseModel):
     response: str
     confidence: float
-    sources: List[str]
-    conversation_id: str
+    filtered: Optional[bool] = False
 
-# Global variables
-chatbot_engine: Optional[ChatbotEngine] = None
-resume_data: Optional[Dict[str, Any]] = None
+# Global chatbot instance
+chatbot: Optional[SimpleChatbot] = None
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize the chatbot system on startup"""
-    global chatbot_engine, resume_data
+    """Initialize the simple chatbot on startup"""
+    global chatbot
     
     try:
-        logger.info("🚀 Starting up Resume Chatbot...")
-        
-        # Initialize resume processor
-        resume_path = Path("../assets/resume/sahibpreet-singh-resume.pdf")
-        processor = ResumeProcessor()
-        
-        # Process resume and create vector store
-        logger.info("📄 Processing resume...")
-        resume_data = await processor.process_resume(resume_path)
-        
-        # Initialize vector store
-        logger.info("🔍 Creating vector embeddings...")
-        vector_store = VectorStore()
-        await vector_store.initialize(resume_data['chunks'])
-        
-        # Initialize chatbot engine
-        logger.info("🤖 Initializing chatbot engine...")
-        chatbot_engine = ChatbotEngine(vector_store, resume_data)
-        
-        logger.info("✅ Chatbot ready to serve!")
+        logger.info("🚀 Starting up Simple Resume Chatbot...")
+        chatbot = SimpleChatbot()
+        logger.info("✅ Simple chatbot ready to serve!")
         
     except Exception as e:
         logger.error(f"❌ Failed to initialize chatbot: {e}")
@@ -91,8 +66,8 @@ async def root():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "message": "Sahibpreet Singh's Personal Chatbot API",
-        "version": "1.0.0"
+        "message": "Sahibpreet Singh's Simple Chatbot API",
+        "version": "2.0.0"
     }
 
 @app.get("/health")
@@ -100,44 +75,30 @@ async def health_check():
     """Detailed health check"""
     return {
         "status": "healthy",
-        "chatbot_ready": chatbot_engine is not None,
-        "resume_loaded": resume_data is not None,
-        "total_chunks": len(resume_data['chunks']) if resume_data else 0
+        "chatbot_ready": chatbot is not None,
+        "llm_available": chatbot.client is not None if chatbot else False
     }
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """Main chat endpoint"""
-    if not chatbot_engine:
+    if not chatbot:
         raise HTTPException(status_code=500, detail="Chatbot not initialized")
     
     try:
         logger.info(f"💬 Processing chat: {request.message[:50]}...")
         
-        response = await chatbot_engine.generate_response(
-            message=request.message,
-            conversation_id=request.conversation_id
-        )
+        response = await chatbot.generate_response(request.message)
         
-        return ChatResponse(**response)
+        return ChatResponse(
+            response=response['response'],
+            confidence=response['confidence'],
+            filtered=response.get('filtered', False)
+        )
         
     except Exception as e:
         logger.error(f"❌ Chat error: {e}")
         raise HTTPException(status_code=500, detail=f"Chat processing failed: {str(e)}")
-
-@app.get("/resume/summary")
-async def get_resume_summary():
-    """Get a summary of the resume content"""
-    if not resume_data:
-        raise HTTPException(status_code=500, detail="Resume not loaded")
-    
-    return {
-        "summary": resume_data.get('summary', ''),
-        "sections": list(resume_data.get('sections', {}).keys()),
-        "total_chunks": len(resume_data.get('chunks', [])),
-        "key_skills": resume_data.get('key_skills', []),
-        "experience_years": resume_data.get('experience_years', 0)
-    }
 
 @app.get("/chat/suggestions")
 async def get_chat_suggestions():

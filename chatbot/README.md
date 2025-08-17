@@ -1,15 +1,14 @@
-# Sahibpreet Singh - Resume Chatbot
+# Sahibpreet Singh - Simple Resume Chatbot
 
-A professional AI-powered chatbot that answers questions about Sahibpreet Singh using RAG (Retrieval-Augmented Generation) on his resume.
+A simple AI-powered chatbot that answers questions about Sahibpreet Singh using Groq's Llama-3.3-70B model.
 
 ## Features
 
-- **Semantic Search**: Uses sentence transformers for intelligent content retrieval
-- **Guardrails**: Prevents off-topic questions and maintains professional responses
-- **Section-based RAG**: Intelligent chunking based on resume sections
+- **Groq LLM Integration**: Uses Llama-3.3-70B for dynamic responses  
+- **Simple Guardrails**: Prevents off-topic questions and maintains professional responses
+- **Markdown Resume**: Reads resume data from simple markdown file
 - **Professional Responses**: Maintains formal, helpful tone
-- **Conversation Memory**: Tracks conversation context
-- **Fallback Support**: Works even without ML libraries installed
+- **Secure API Key Management**: Environment-based configuration
 
 ## Setup
 
@@ -36,15 +35,13 @@ python app.py
 
 The API will be available at: `http://localhost:8000`
 
-**Note**: Without a Groq API key, the chatbot will fall back to template-based responses. For dynamic, intelligent responses powered by Llama-3.3-70B, configure the Groq API key.
+**Note**: A Groq API key is required for the chatbot to work. Without it, the chatbot will return error messages.
 
 ## API Endpoints
 
 - `GET /` - Health check
-- `GET /health` - Detailed health status
+- `GET /health` - Detailed health status  
 - `POST /chat` - Main chat endpoint
-- `GET /resume/summary` - Resume summary
-- `GET /chat/suggestions` - Suggested questions
 
 ## Example Usage
 
@@ -52,26 +49,24 @@ The API will be available at: `http://localhost:8000`
 # Test the chatbot
 curl -X POST "http://localhost:8000/chat" \
      -H "Content-Type: application/json" \
-     -d '{"message": "What is Sahibpreet's experience with GenAI?"}'
+     -d '{"message": "What is Sahibpreet'\''s experience with GenAI?"}'
 ```
 
 ## Guardrails
 
-The chatbot automatically filters:
-- Off-topic questions unrelated to Sahibpreet Singh
+Simple guardrails automatically filter:
+- Off-topic questions unrelated to professional background
 - Requests for other people's information
-- Inappropriate or personal questions
-- General technical help requests
+- Inappropriate content (weather, politics, personal life)
 
 All responses are professional and focused on Sahibpreet's background.
 
 ## Architecture
 
 - **FastAPI**: REST API framework
-- **Resume Processor**: Extracts and chunks resume content
-- **Vector Store**: Semantic search using sentence transformers
-- **Guardrails Engine**: Content filtering and response validation
-- **Chatbot Engine**: Main conversation logic with RAG
+- **Groq LLM**: Llama-3.3-70B for dynamic response generation
+- **Markdown Resume**: Simple resume.md file with all information
+- **Simple Guardrails**: Basic keyword-based filtering
 
 ## Integration
 
