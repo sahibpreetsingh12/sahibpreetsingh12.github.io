@@ -567,7 +567,7 @@ class SahibpreetChatbot {
             return;
         }
         
-        // Try to call Groq API directly, fallback to structured responses if fails
+        // Send to Groq API with resume context
         try {
             const response = await this.callGroqDirect(message);
             this.hideTyping();
@@ -576,9 +576,9 @@ class SahibpreetChatbot {
             
         } catch (error) {
             console.error('Groq API error:', error);
-            // Use structured fallback responses (better than generic error)
+            // Simple error message when Groq fails
             this.hideTyping();
-            this.addMessage(this.getFallbackResponse(message), 'bot');
+            this.addMessage("I'm having trouble processing your question right now. Please try again in a moment.", 'bot');
             document.getElementById('chat-suggestions').innerHTML = '';
         }
     }
@@ -735,119 +735,7 @@ Only answer questions about Sahibpreet Singh based on this resume information. F
         return data.choices[0].message.content.trim();
     }
     
-    getFallbackResponse(message) {
-        const messageLower = message.toLowerCase();
-        
-        // Greeting responses
-        if (messageLower.includes('hello') || messageLower.includes('hi') || messageLower.includes('hey')) {
-            return "Hello! I'm here to help you learn about Sahibpreet Singh's professional background. What would you like to know about his experience, skills, or projects?";
-        }
-        
-        // Experience questions
-        if (messageLower.includes('experience') || messageLower.includes('work') || messageLower.includes('job') || messageLower.includes('career')) {
-            return `Sahibpreet Singh is currently a **GenAI Consultant at CGI** where he has delivered significant impact:
-
-• Architected Agentic RAG systems resulting in **$700K project wins**
-• Developed Zero-Trust RAG systems achieving **65% faster recruitment processes**  
-• Optimized ML pipelines with **31% performance improvements** using Databricks + PySpark
-• Led cross-functional teams implementing enterprise AI solutions
-
-**Previous Experience:**
-• **GenAI Engineer** at AI Talentflow (2023-2024)
-• **Data Scientist** at Tatras Data (2022-2023)  
-• **ML Engineer** at ZS Associates (2021-2022)
-
-Consistently delivering high-impact AI/ML solutions across all roles.`;
-        }
-        
-        // Skills questions
-        if (messageLower.includes('skill') || messageLower.includes('technology') || messageLower.includes('technical') || messageLower.includes('programming')) {
-            return `Sahibpreet Singh's technical expertise includes:
-
-**AI/ML Frameworks:**
-• PyTorch, Transformers, Langchain, LlamaIndex
-
-**Agentic AI:**
-• CrewAI, Langgraph, Autogen, SmolAgents  
-
-**Cloud Platforms:**
-• Azure (Promptflow, ML Studio, Key Vault)
-• AWS (ECS, Lambda, SageMaker)
-
-**Data Engineering:**
-• Databricks, PySpark, Neo4j, MongoDB, CosmosDB
-
-**DevOps & Infrastructure:**
-• Docker, Terraform, Kubernetes, GitHub Actions
-
-**Programming Languages:**
-• Python, CUDA, SQL, JavaScript
-
-He specializes in production-scale AI systems and custom CUDA kernel development.`;
-        }
-        
-        // Education questions
-        if (messageLower.includes('education') || messageLower.includes('degree') || messageLower.includes('study') || messageLower.includes('university')) {
-            return `Sahibpreet Singh's educational background:
-
-• **Post Graduate Certificate in AI & Machine Learning** - Lambton College (2024-2025)
-• **Bachelor of Technology in Computer Science** - Punjab Technical University (2017-2021)
-
-He's currently pursuing advanced AI/ML studies to stay at the forefront of rapidly evolving technologies.`;
-        }
-        
-        // Projects questions
-        if (messageLower.includes('project') || messageLower.includes('built') || messageLower.includes('developed')) {
-            return `Sahibpreet Singh's key projects include:
-
-**Enterprise AI Systems:**
-• **Zero-Trust RAG System:** Enterprise AI security solution with Azure Key Vault integration
-• **Resume-2-ResumeRAG:** Production GenAI system deployed on AWS ECS generating **$15K revenue increase**
-
-**Performance Optimization:**
-• **Custom CUDA Kernels:** GPU optimization for LLM inference using Triton
-• **ML Pipeline Optimization:** **31% performance improvement** using Databricks + PySpark
-
-**Research Projects:**
-• **Tokenizer Fertility Research:** Novel insights into subword optimization for production LLMs
-
-**Business Impact:**
-• Delivered **$700K+ project value** through innovative AI systems
-• Achieved **65% efficiency improvements** in recruitment processes
-
-These projects demonstrate his ability to deliver enterprise-scale AI solutions with measurable business value.`;
-        }
-        
-        // Contact questions
-        if (messageLower.includes('contact') || messageLower.includes('email') || messageLower.includes('reach') || messageLower.includes('linkedin')) {
-            return `You can connect with Sahibpreet Singh through:
-
-• **Email:** ss9334931@gmail.com
-• **LinkedIn:** linkedin.com/in/sahibpreetsinghh/
-• **GitHub:** github.com/sahibpreetsingh12  
-• **Kaggle:** kaggle.com/sahib12
-
-He's always open to discussing GenAI systems, production ML challenges, and collaboration opportunities.`;
-        }
-        
-        // General about questions
-        if (messageLower.includes('about') || messageLower.includes('who') || messageLower.includes('sahibpreet')) {
-            return `Sahibpreet Singh is a GenAI Consultant at CGI specializing in production-scale AI systems. He has delivered over $700K in project value through Agentic RAG systems and achieved 65% efficiency improvements. 
-
-Expert in PyTorch, Transformers, Azure ML, and custom CUDA kernels, he's known for building AI systems that scale beyond demos to real-world enterprise applications. Currently pursuing advanced AI/ML education and actively researching tokenizer optimization.`;
-        }
-        
-        // Default fallback
-        return `I'd be happy to help you learn about Sahibpreet Singh! You can ask me about:
-
-• His work experience and current role at CGI
-• Technical skills and expertise in AI/ML
-• Educational background and certifications  
-• Key projects and achievements
-• How to contact him for opportunities
-
-What specific aspect of his background interests you?`;
-    }
+    // Removed complex fallback logic - now just guardrails + Groq API
     
     sendSuggestion(suggestion) {
         const input = document.getElementById('chat-input');
