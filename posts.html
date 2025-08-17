@@ -9,21 +9,247 @@ permalink: /posts/
     <h1><i class="fas fa-blog"></i> All Posts</h1>
     <p>Every post from my journey in GenAI, LLMs, and production ML systems — all in one place.</p>
 
-    <div class="posts-grid">
-      {% for post in site.posts %}
-      <div class="post-card">
-        <div class="post-date">{{ post.date | date: "%B %d, %Y" }}</div>
-        <h3 class="post-title">
-          <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
-        </h3>
-        <p class="post-excerpt">{{ post.description | default: post.excerpt }}</p>
-        <div class="post-tags">
-          {% for tag in post.tags %}
-          <span class="tag">{{ tag }}</span>
-          {% endfor %}
-        </div>
+    <!-- Sorting Controls -->
+    <div class="posts-controls">
+      <div class="sort-controls">
+        <label for="sort-select">Sort by:</label>
+        <select id="sort-select" class="sort-dropdown">
+          <option value="date-desc">Newest First</option>
+          <option value="date-asc">Oldest First</option>
+          <option value="title-asc">Title A-Z</option>
+          <option value="title-desc">Title Z-A</option>
+          <option value="topic">Topic</option>
+        </select>
       </div>
-      {% endfor %}
+      
+      <div class="filter-controls">
+        <label for="topic-filter">Filter by topic:</label>
+        <select id="topic-filter" class="filter-dropdown">
+          <option value="all">All Topics</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Pinned Posts Section -->
+    <div id="pinned-posts-section" class="pinned-section" style="display: none;">
+      <h2><i class="fas fa-thumbtack"></i> Pinned Posts</h2>
+      <div id="pinned-posts" class="posts-grid pinned-grid"></div>
+    </div>
+
+    <!-- Regular Posts Section -->
+    <div id="regular-posts-section">
+      <h2 id="regular-posts-title"><i class="fas fa-file-alt"></i> Recent Posts</h2>
+      <div id="posts-container" class="posts-grid">
+        <!-- Posts will be populated by JavaScript -->
+      </div>
     </div>
   </div>
 </section>
+
+<style>
+  .posts-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .sort-controls, .filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .sort-dropdown, .filter-dropdown {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 0.9rem;
+    min-width: 150px;
+  }
+
+  .pinned-section {
+    margin-bottom: 3rem;
+  }
+
+  .pinned-section h2 {
+    color: var(--accent-color);
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .pinned-grid .post-card {
+    position: relative;
+    border: 2px solid var(--accent-color);
+  }
+
+  .pinned-grid .post-card::before {
+    content: "📌 PINNED";
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    background: var(--accent-color);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 0 10px 0 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .post-card {
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+
+  .post-card:hover {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .post-title a {
+    color: var(--accent-color);
+    text-decoration: none;
+  }
+
+  .post-title a:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 768px) {
+    .posts-controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .sort-controls, .filter-controls {
+      justify-content: space-between;
+    }
+  }
+</style>
+
+<script>
+  // Post data - in a real Jekyll site, this would be generated from site.posts
+  const allPosts = [
+    {% for post in site.posts %}
+    {
+      title: {{ post.title | jsonify }},
+      date: "{{ post.date | date: '%Y-%m-%d' }}",
+      dateFormatted: "{{ post.date | date: '%B %d, %Y' }}",
+      url: "{{ post.url | relative_url }}",
+      description: {{ post.description | default: post.excerpt | strip_html | jsonify }},
+      tags: {{ post.tags | jsonify }},
+      pinned: {{ post.pinned | default: false }}
+    }{% unless forloop.last %},{% endunless %}
+    {% endfor %}
+  ];
+
+  // Sort and filter functions
+  function sortPosts(posts, sortBy) {
+    const sorted = [...posts];
+    switch(sortBy) {
+      case 'date-desc':
+        return sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
+      case 'date-asc':
+        return sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
+      case 'title-asc':
+        return sorted.sort((a, b) => a.title.localeCompare(b.title));
+      case 'title-desc':
+        return sorted.sort((a, b) => b.title.localeCompare(a.title));
+      case 'topic':
+        return sorted.sort((a, b) => {
+          const aTopics = a.tags.join(', ');
+          const bTopics = b.tags.join(', ');
+          return aTopics.localeCompare(bTopics);
+        });
+      default:
+        return sorted;
+    }
+  }
+
+  function filterPosts(posts, topic) {
+    if (topic === 'all') return posts;
+    return posts.filter(post => post.tags.includes(topic));
+  }
+
+  function createPostCard(post, isPinned = false) {
+    return `
+      <a href="${post.url}" class="post-card ${isPinned ? 'pinned' : ''}">
+        <div class="post-date">${post.dateFormatted}</div>
+        <h3 class="post-title">${post.title}</h3>
+        <p class="post-excerpt">${post.description}</p>
+        <div class="post-tags">
+          ${post.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+        </div>
+      </a>
+    `;
+  }
+
+  function renderPosts() {
+    const sortBy = document.getElementById('sort-select').value;
+    const topicFilter = document.getElementById('topic-filter').value;
+    
+    // Separate pinned and regular posts
+    const pinnedPosts = allPosts.filter(post => post.pinned);
+    const regularPosts = allPosts.filter(post => !post.pinned);
+    
+    // Apply filters and sorting
+    const filteredRegular = filterPosts(regularPosts, topicFilter);
+    const sortedRegular = sortPosts(filteredRegular, sortBy);
+    
+    // Render pinned posts
+    const pinnedContainer = document.getElementById('pinned-posts');
+    const pinnedSection = document.getElementById('pinned-posts-section');
+    
+    if (pinnedPosts.length > 0) {
+      pinnedContainer.innerHTML = pinnedPosts.map(post => createPostCard(post, true)).join('');
+      pinnedSection.style.display = 'block';
+    } else {
+      pinnedSection.style.display = 'none';
+    }
+    
+    // Render regular posts
+    const regularContainer = document.getElementById('posts-container');
+    regularContainer.innerHTML = sortedRegular.map(post => createPostCard(post)).join('');
+    
+    // Update section title
+    const titleElement = document.getElementById('regular-posts-title');
+    const postCount = sortedRegular.length;
+    titleElement.innerHTML = `<i class="fas fa-file-alt"></i> ${pinnedPosts.length > 0 ? 'Recent Posts' : 'All Posts'} (${postCount})`;
+  }
+
+  function populateTopicFilter() {
+    const allTopics = [...new Set(allPosts.flatMap(post => post.tags))].sort();
+    const topicFilter = document.getElementById('topic-filter');
+    
+    allTopics.forEach(topic => {
+      const option = document.createElement('option');
+      option.value = topic;
+      option.textContent = topic.charAt(0).toUpperCase() + topic.slice(1);
+      topicFilter.appendChild(option);
+    });
+  }
+
+  // Initialize the page
+  document.addEventListener('DOMContentLoaded', function() {
+    populateTopicFilter();
+    renderPosts();
+    
+    // Add event listeners
+    document.getElementById('sort-select').addEventListener('change', renderPosts);
+    document.getElementById('topic-filter').addEventListener('change', renderPosts);
+  });
+</script>
