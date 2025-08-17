@@ -869,13 +869,6 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
     </section>
 
     <!-- Chatbot Widget -->
-    <!-- Admin Toggle Button (hidden by default) -->
-    <div id="admin-toggle" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: none;">
-        <button onclick="toggleChatbot()" style="background: #dc2626; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-            <span id="chatbot-status">Chatbot: ON</span>
-        </button>
-    </div>
-
     <!-- Configuration (add your API keys here) -->
     <script src="config.js"></script>
     
@@ -883,33 +876,6 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
     <script src="chatbot_widget.js"></script>
     
     <script>
-        // Admin chatbot toggle functionality
-        let chatbotEnabled = true;
-        
-        function toggleChatbot() {
-            chatbotEnabled = !chatbotEnabled;
-            const chatbotWidget = document.getElementById('sahibpreet-chatbot');
-            const statusText = document.getElementById('chatbot-status');
-            
-            if (chatbotEnabled) {
-                chatbotWidget.style.display = 'block';
-                statusText.textContent = 'Chatbot: ON';
-                statusText.parentElement.style.background = '#16a34a';
-            } else {
-                chatbotWidget.style.display = 'none';
-                statusText.textContent = 'Chatbot: OFF';
-                statusText.parentElement.style.background = '#dc2626';
-            }
-        }
-        
-        // Show admin toggle when pressing Ctrl+Shift+A
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-                const adminToggle = document.getElementById('admin-toggle');
-                adminToggle.style.display = adminToggle.style.display === 'none' ? 'block' : 'none';
-            }
-        });
-
         // Theme toggle functionality
         function toggleTheme() {
             const body = document.body;
