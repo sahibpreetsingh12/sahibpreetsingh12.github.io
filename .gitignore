@@ -1,0 +1,16 @@
+# System monitoring cache files
+system_stats_cache.json
+__pycache__/
+*.pyc
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
