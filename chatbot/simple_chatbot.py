@@ -113,13 +113,14 @@ GUIDELINES:
 1. Answer questions about Sahibpreet Singh's professional background only
 2. Base responses on the resume information provided below
 3. Be professional, friendly, and concise
-4. If asked about something not in the resume, politely say you don't have that information
-5. Don't make up information not present in the resume
+4. Format responses with proper bullet points using • symbols for better readability
+5. If asked about something not in the resume, politely say you don't have that information
+6. Don't make up information not present in the resume
 
 RESUME INFORMATION:
 {self.resume_content}
 
-Please answer the user's question based on this information."""
+Please answer the user's question based on this information. Format your response with clear bullet points and structure where appropriate."""
 
             # Generate response
             completion = self.client.chat.completions.create(

@@ -556,6 +556,17 @@ class SahibpreetChatbot {
         // Show typing indicator
         this.showTyping();
         
+        // Step 1: Check guardrails first
+        const guardrailCheck = this.checkGuardrails(message);
+        if (!guardrailCheck.isValid) {
+            setTimeout(() => {
+                this.hideTyping();
+                this.addMessage(guardrailCheck.response, 'bot');
+                document.getElementById('chat-suggestions').innerHTML = '';
+            }, 1000);
+            return;
+        }
+        
         // Check if API is available, use fallback if not
         if (this.apiAvailable === false) {
             setTimeout(() => {
@@ -600,6 +611,26 @@ class SahibpreetChatbot {
             this.addMessage(this.getFallbackResponse(message), 'bot');
             document.getElementById('chat-suggestions').innerHTML = '';
         }
+    }
+    
+    checkGuardrails(message) {
+        const messageLower = message.toLowerCase().trim();
+        
+        // Block off-topic questions
+        const blockedKeywords = [
+            'weather', 'politics', 'religion', 'other people', 'someone else',
+            'another person', 'family', 'relationship', 'dating', 'marriage',
+            'illegal', 'harmful', 'dangerous', 'violence', 'personal life'
+        ];
+        
+        if (blockedKeywords.some(keyword => messageLower.includes(keyword))) {
+            return {
+                isValid: false,
+                response: "I can only answer questions about Sahibpreet Singh's professional background, skills, and experience. Please ask about his work, projects, or technical expertise."
+            };
+        }
+        
+        return { isValid: true };
     }
     
     getFallbackResponse(message) {
