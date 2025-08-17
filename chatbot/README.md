@@ -19,12 +19,24 @@ cd chatbot
 pip install -r requirements.txt
 ```
 
-2. **Run the Chatbot API**
+2. **Configure Groq API (Required for Dynamic Responses)**
+```bash
+# Copy the environment template
+cp .env.example .env
+
+# Edit .env and add your Groq API key
+GROQ_API_KEY=your_actual_groq_api_key_here
+GROQ_MODEL=llama-3.3-70b-versatile
+```
+
+3. **Run the Chatbot API**
 ```bash
 python app.py
 ```
 
 The API will be available at: `http://localhost:8000`
+
+**Note**: Without a Groq API key, the chatbot will fall back to template-based responses. For dynamic, intelligent responses powered by Llama-3.3-70B, configure the Groq API key.
 
 ## API Endpoints
 

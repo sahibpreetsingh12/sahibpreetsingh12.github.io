@@ -11,6 +11,7 @@ from datetime import datetime
 
 from vector_store import VectorStore
 from guardrails import GuardrailsEngine
+from llm_service import LLMService
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ class ChatbotEngine:
         self.vector_store = vector_store
         self.resume_data = resume_data
         self.guardrails = GuardrailsEngine()
+        self.llm_service = LLMService()
         self.conversations = {}  # Store conversation history
         
         # Predefined responses for common questions
@@ -61,8 +63,15 @@ class ChatbotEngine:
             }
         
         try:
-            # Step 1: Check message appropriateness
+            # Step 1: Enhanced guardrails with LLM + hardcoded rules
+            # First check hardcoded rules
             guardrail_check = self.guardrails.check_query_appropriateness(message)
+            
+            # Then check with LLM if available
+            if guardrail_check['is_appropriate'] and self.llm_service.is_available():
+                llm_guardrail_check = await self.llm_service.validate_query_appropriateness(message)
+                if not llm_guardrail_check['is_appropriate']:
+                    guardrail_check = llm_guardrail_check
             
             if not guardrail_check['is_appropriate']:
                 response = {
@@ -88,7 +97,7 @@ class ChatbotEngine:
                 self._store_conversation_turn(conversation_id, message, response['response'])
                 return response
             
-            # Step 3: RAG-based response generation
+            # Step 3: RAG-based response generation with LLM
             rag_response = await self._generate_rag_response(message, conversation_id)
             
             # Step 4: Apply guardrails to response
@@ -107,7 +116,9 @@ class ChatbotEngine:
                 'response': enhanced_response,
                 'confidence': rag_response['confidence'],
                 'sources': rag_response['sources'],
-                'conversation_id': conversation_id
+                'conversation_id': conversation_id,
+                'model_used': rag_response.get('model_used', 'template'),
+                'tokens_used': rag_response.get('tokens_used', 0)
             }
             
             # Store conversation
@@ -148,12 +159,31 @@ class ChatbotEngine:
         return None
     
     async def _generate_rag_response(self, message: str, conversation_id: str) -> Dict[str, Any]:
-        """Generate response using RAG (Retrieval-Augmented Generation)"""
+        """Generate response using RAG (Retrieval-Augmented Generation) with LLM"""
         
         # Step 1: Retrieve relevant chunks
         relevant_chunks = await self.vector_store.search(message, top_k=3)
         
         if not relevant_chunks:
+            # Try LLM with general context if no specific chunks found
+            if self.llm_service.is_available():
+                general_context = [self.resume_data.get('summary', '')]
+                conversation_history = self.conversations.get(conversation_id, {}).get('messages', [])
+                
+                llm_response = await self.llm_service.generate_response(
+                    message=message,
+                    context=general_context,
+                    conversation_history=conversation_history
+                )
+                
+                return {
+                    'response': llm_response['response'],
+                    'confidence': llm_response['confidence'],
+                    'sources': ['general_knowledge'],
+                    'model_used': llm_response.get('model_used', 'groq'),
+                    'tokens_used': llm_response.get('tokens_used', 0)
+                }
+            
             return {
                 'response': "I don't have specific information about that aspect of Sahibpreet Singh's background. Could you try asking about his work experience, technical skills, or projects?",
                 'confidence': 0.3,
@@ -169,18 +199,41 @@ class ChatbotEngine:
                 context_pieces.append(chunk['content'])
                 sources.append(chunk.get('metadata', {}).get('section', 'resume'))
         
-        # Step 3: Generate response using template-based approach
-        response = self._generate_template_based_response(message, context_pieces)
-        
-        # Calculate confidence based on similarity scores
-        max_score = max([score for _, score in relevant_chunks]) if relevant_chunks else 0
-        confidence = min(max_score * 1.2, 0.95)  # Cap at 95%
-        
-        return {
-            'response': response,
-            'confidence': confidence,
-            'sources': sources
-        }
+        # Step 3: Generate response using LLM if available, fallback to template
+        if self.llm_service.is_available() and context_pieces:
+            conversation_history = self.conversations.get(conversation_id, {}).get('messages', [])
+            
+            llm_response = await self.llm_service.generate_response(
+                message=message,
+                context=context_pieces,
+                conversation_history=conversation_history
+            )
+            
+            # Calculate confidence based on both similarity scores and LLM confidence
+            max_score = max([score for _, score in relevant_chunks]) if relevant_chunks else 0
+            combined_confidence = (max_score * 0.3) + (llm_response['confidence'] * 0.7)
+            
+            return {
+                'response': llm_response['response'],
+                'confidence': min(combined_confidence, 0.95),
+                'sources': sources,
+                'model_used': llm_response.get('model_used', 'groq'),
+                'tokens_used': llm_response.get('tokens_used', 0)
+            }
+        else:
+            # Fallback to template-based response
+            response = self._generate_template_based_response(message, context_pieces)
+            
+            # Calculate confidence based on similarity scores
+            max_score = max([score for _, score in relevant_chunks]) if relevant_chunks else 0
+            confidence = min(max_score * 1.2, 0.95)  # Cap at 95%
+            
+            return {
+                'response': response,
+                'confidence': confidence,
+                'sources': sources,
+                'model_used': 'template_fallback'
+            }
     
     def _generate_template_based_response(self, message: str, context_pieces: List[str]) -> str:
         """Generate response using template-based approach with context"""

@@ -3,6 +3,18 @@ system_stats_cache.json
 __pycache__/
 *.pyc
 
+# Environment files (NEVER COMMIT THESE!)
+.env
+.env.local
+.env.production
+*.env
+chatbot/.env*
+
+# API Keys and secrets
+**/secrets/
+**/*_key.txt
+**/*_secret.txt
+
 # IDE files
 .vscode/
 .idea/
