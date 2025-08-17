@@ -484,9 +484,10 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
             position: relative;
             border: 1px solid var(--border-color);
             background: linear-gradient(135deg, var(--card-bg), transparent);
-            height: fit-content;
+            height: 100%;
             display: flex;
             flex-direction: column;
+            min-height: 450px;
         }
 
         .card-header {
@@ -494,6 +495,14 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
             align-items: center;
             justify-content: space-between;
             margin-bottom: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .elite-card .code-block {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
         }
 
         .card-badge {
@@ -961,48 +970,186 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
             }, 16);
         }
 
-        // Dynamic widget updates
-        function updateWidgets() {
-            // GPU Temperature (simulate realistic range)
-            const gpuTemp = Math.floor(Math.random() * 15) + 65; // 65-80°C
-            const gpuElement = document.getElementById('gpu-temp');
-            const gpuBar = document.getElementById('gpu-bar');
+        // Real-time widget updates with caching
+        async function updateWidgets() {
+            // Update GitHub stats (real data)
+            await updateGitHubStats();
             
-            if (gpuElement) {
-                gpuElement.textContent = gpuTemp;
-                gpuBar.style.width = `${Math.min((gpuTemp - 50) * 2, 100)}%`;
-            }
+            // Update system stats (real when online, cached when offline)
+            await updateSystemStats();
+        }
 
-            // Memory Usage (simulate realistic usage)
-            const memoryUsage = (Math.random() * 8 + 20).toFixed(1); // 20-28 GB
-            const memoryElement = document.getElementById('memory-usage');
-            const memoryBar = document.getElementById('memory-bar');
-            
-            if (memoryElement) {
-                memoryElement.textContent = memoryUsage;
-                memoryBar.style.width = `${(memoryUsage / 32) * 100}%`;
+        // GitHub API integration for real commit data
+        async function updateGitHubStats() {
+            try {
+                const response = await fetch('https://api.github.com/users/sahibpreetsingh12/events?per_page=100');
+                const events = await response.json();
+                
+                if (Array.isArray(events)) {
+                    // Count today's commits
+                    const today = new Date().toDateString();
+                    const todayCommits = events.filter(event => 
+                        event.type === 'PushEvent' && 
+                        new Date(event.created_at).toDateString() === today
+                    ).length;
+                    
+                    // Count this week's commits
+                    const weekAgo = new Date();
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    const weekCommits = events.filter(event => 
+                        event.type === 'PushEvent' && 
+                        new Date(event.created_at) > weekAgo
+                    ).length;
+                    
+                    // Update UI
+                    const commitsElement = document.getElementById('commits-today');
+                    const commitsBar = document.getElementById('commits-bar');
+                    
+                    if (commitsElement) {
+                        commitsElement.textContent = todayCommits;
+                        commitsBar.style.width = `${Math.min(todayCommits * 10, 100)}%`;
+                    }
+                    
+                    // Cache the data
+                    localStorage.setItem('github_stats', JSON.stringify({
+                        todayCommits,
+                        weekCommits,
+                        lastUpdate: new Date().toISOString()
+                    }));
+                    
+                    console.log(`✅ GitHub stats updated: ${todayCommits} commits today`);
+                }
+            } catch (error) {
+                console.log('⚠️ GitHub API unavailable, using cached data');
+                loadCachedGitHubStats();
             }
+        }
 
-            // GitHub commits (simulate daily activity)
-            const commits = Math.floor(Math.random() * 10) + 8; // 8-18 commits
-            const commitsElement = document.getElementById('commits-today');
-            const commitsBar = document.getElementById('commits-bar');
-            
-            if (commitsElement) {
-                commitsElement.textContent = commits;
-                commitsBar.style.width = `${Math.min(commits * 5, 100)}%`;
+        // Load cached GitHub stats when API is unavailable
+        function loadCachedGitHubStats() {
+            const cached = localStorage.getItem('github_stats');
+            if (cached) {
+                const data = JSON.parse(cached);
+                const commitsElement = document.getElementById('commits-today');
+                const commitsBar = document.getElementById('commits-bar');
+                
+                if (commitsElement) {
+                    commitsElement.textContent = data.todayCommits;
+                    commitsBar.style.width = `${Math.min(data.todayCommits * 10, 100)}%`;
+                }
             }
+        }
 
-            // Training Progress (simulate ongoing training)
-            const currentProgress = parseInt(document.getElementById('training-progress').textContent) || 87;
-            const newProgress = Math.min(currentProgress + Math.floor(Math.random() * 3), 100);
-            const trainingElement = document.getElementById('training-progress');
-            const trainingBar = document.getElementById('training-bar');
-            
-            if (trainingElement) {
-                trainingElement.textContent = newProgress;
-                trainingBar.style.width = `${newProgress}%`;
+        // System stats with local monitoring and caching
+        async function updateSystemStats() {
+            try {
+                // Try to get real system stats from local endpoint
+                const response = await fetch('http://localhost:8001/system/stats', {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(2000) // 2 second timeout
+                });
+                
+                if (response.ok) {
+                    const stats = await response.json();
+                    
+                    // Update GPU temperature
+                    const gpuElement = document.getElementById('gpu-temp');
+                    const gpuBar = document.getElementById('gpu-bar');
+                    if (gpuElement && stats.gpu_temp) {
+                        gpuElement.textContent = stats.gpu_temp;
+                        gpuBar.style.width = `${Math.min((stats.gpu_temp - 30) * 1.5, 100)}%`;
+                    }
+                    
+                    // Update memory usage
+                    const memoryElement = document.getElementById('memory-usage');
+                    const memoryBar = document.getElementById('memory-bar');
+                    if (memoryElement && stats.memory_usage) {
+                        memoryElement.textContent = stats.memory_usage.toFixed(1);
+                        memoryBar.style.width = `${(stats.memory_usage / 32) * 100}%`;
+                    }
+                    
+                    // Update training progress (you can manually update this)
+                    const trainingElement = document.getElementById('training-progress');
+                    const trainingBar = document.getElementById('training-bar');
+                    if (trainingElement && stats.training_progress) {
+                        trainingElement.textContent = stats.training_progress;
+                        trainingBar.style.width = `${stats.training_progress}%`;
+                    }
+                    
+                    // Cache the stats with timestamp
+                    localStorage.setItem('system_stats', JSON.stringify({
+                        ...stats,
+                        lastUpdate: new Date().toISOString(),
+                        isOnline: true
+                    }));
+                    
+                    console.log('✅ System stats updated from local monitoring');
+                } else {
+                    throw new Error('Local system monitor not responding');
+                }
+                
+            } catch (error) {
+                console.log('⚠️ Local system monitor unavailable, using cached data');
+                loadCachedSystemStats();
             }
+        }
+
+        // Load cached system stats when local monitor is offline
+        function loadCachedSystemStats() {
+            const cached = localStorage.getItem('system_stats');
+            if (cached) {
+                const stats = JSON.parse(cached);
+                const lastUpdate = new Date(stats.lastUpdate);
+                const hoursAgo = (new Date() - lastUpdate) / (1000 * 60 * 60);
+                
+                // Show cached data with "last seen" indicator
+                const gpuElement = document.getElementById('gpu-temp');
+                const gpuBar = document.getElementById('gpu-bar');
+                if (gpuElement && stats.gpu_temp) {
+                    gpuElement.textContent = stats.gpu_temp;
+                    gpuBar.style.width = `${Math.min((stats.gpu_temp - 30) * 1.5, 100)}%`;
+                    gpuBar.style.opacity = '0.7'; // Indicate it's cached
+                }
+                
+                const memoryElement = document.getElementById('memory-usage');
+                const memoryBar = document.getElementById('memory-bar');
+                if (memoryElement && stats.memory_usage) {
+                    memoryElement.textContent = stats.memory_usage.toFixed(1);
+                    memoryBar.style.width = `${(stats.memory_usage / 32) * 100}%`;
+                    memoryBar.style.opacity = '0.7';
+                }
+                
+                const trainingElement = document.getElementById('training-progress');
+                const trainingBar = document.getElementById('training-bar');
+                if (trainingElement && stats.training_progress) {
+                    trainingElement.textContent = stats.training_progress;
+                    trainingBar.style.width = `${stats.training_progress}%`;
+                    trainingBar.style.opacity = '0.7';
+                }
+                
+                console.log(`📱 Using cached system stats from ${Math.round(hoursAgo)} hours ago`);
+            } else {
+                // Fallback to reasonable defaults if no cache
+                setDefaultStats();
+            }
+        }
+
+        // Set reasonable default stats
+        function setDefaultStats() {
+            const defaults = {
+                gpu_temp: 72,
+                memory_usage: 24.7,
+                training_progress: 87
+            };
+            
+            document.getElementById('gpu-temp').textContent = defaults.gpu_temp;
+            document.getElementById('gpu-bar').style.width = '60%';
+            
+            document.getElementById('memory-usage').textContent = defaults.memory_usage;
+            document.getElementById('memory-bar').style.width = '77%';
+            
+            document.getElementById('training-progress').textContent = defaults.training_progress;
+            document.getElementById('training-bar').style.width = '87%';
         }
 
         // Initialize animated counters on scroll
