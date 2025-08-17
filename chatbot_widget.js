@@ -567,18 +567,32 @@ class SahibpreetChatbot {
             return;
         }
         
-        // Send to Groq API with resume context
+        // Send to backend API (which calls Groq)
         try {
-            const response = await this.callGroqDirect(message);
+            const response = await fetch(`${this.config.apiUrl}/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Backend API request failed');
+            }
+            
+            const data = await response.json();
             this.hideTyping();
-            this.addMessage(response, 'bot');
+            this.addMessage(data.response, 'bot');
             document.getElementById('chat-suggestions').innerHTML = '';
             
         } catch (error) {
-            console.error('Groq API error:', error);
-            // Simple error message when Groq fails
+            console.error('Backend API error:', error);
+            // Simple error message when backend fails
             this.hideTyping();
-            this.addMessage("I'm having trouble processing your question right now. Please try again in a moment.", 'bot');
+            this.addMessage("I'm having trouble processing your question right now. Please make sure the chatbot backend is running (python app.py in chatbot folder).", 'bot');
             document.getElementById('chat-suggestions').innerHTML = '';
         }
     }
@@ -698,9 +712,9 @@ Novel insights into subword optimization for production LLMs
 - **IEEE Hackathon Winner (2nd Place)** for Explainable AI solution
 - **Technical content creator** with growing audience on LinkedIn`;
 
+        // Try direct Groq API call (may fail due to CORS)
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
-            mode: 'cors',
             headers: {
                 'Authorization': `Bearer ${GROQ_API_KEY}`,
                 'Content-Type': 'application/json',
