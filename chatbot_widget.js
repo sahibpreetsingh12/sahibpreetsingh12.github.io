@@ -1,12 +1,18 @@
 /**
  * Professional Chatbot Widget for Sahibpreet Singh's Website
- * Integrates with the Python FastAPI backend
+ * Client-side RAG system using Transformers.js for browser-based AI
  */
+
+// Import Transformers.js
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js';
+
+// Disable remote models and use local cache
+env.allowRemoteModels = false;
+env.allowLocalModels = true;
 
 class SahibpreetChatbot {
     constructor(config = {}) {
         this.config = {
-            apiUrl: config.apiUrl || 'http://localhost:8000',
             position: config.position || 'bottom-right',
             theme: config.theme || 'auto', // 'light', 'dark', 'auto'
             placeholder: config.placeholder || 'Ask me about Sahibpreet Singh...',
@@ -17,7 +23,13 @@ class SahibpreetChatbot {
         this.isOpen = false;
         this.conversationId = this.generateConversationId();
         this.isTyping = false;
-        this.apiAvailable = null; // null = not checked, true = available, false = fallback mode
+        
+        // RAG system components
+        this.embeddingModel = null;
+        this.qaModel = null;
+        this.resumeChunks = [];
+        this.embeddings = [];
+        this.isInitialized = false;
         
         this.init();
     }
@@ -25,27 +37,54 @@ class SahibpreetChatbot {
     async init() {
         this.createChatWidget();
         this.attachEventListeners();
-        await this.checkApiAvailability();
+        await this.initializeRAGSystem();
         this.loadSuggestions();
     }
     
-    async checkApiAvailability() {
+    async initializeRAGSystem() {
         try {
-            const response = await fetch(`${this.config.apiUrl}/health`, {
-                method: 'GET',
-                timeout: 3000
+            this.updateLoadingProgress('Loading embedding model...', 10);
+            
+            // Load embedding model for RAG
+            this.embeddingModel = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
+                progress_callback: (progress) => {
+                    if (progress.status === 'downloading') {
+                        const percent = Math.round((progress.loaded / progress.total) * 30) + 10;
+                        this.updateLoadingProgress(`Downloading embedding model... ${percent}%`, percent);
+                    }
+                }
             });
             
-            if (response.ok) {
-                this.apiAvailable = true;
-                console.log('✅ Chatbot API is available');
-            } else {
-                this.apiAvailable = false;
-                console.log('⚠️ Chatbot API not responding, using fallback mode');
-            }
+            this.updateLoadingProgress('Loading QA model...', 50);
+            
+            // Load question-answering model
+            this.qaModel = await pipeline('question-answering', 'Xenova/distilbert-base-cased-distilled-squad', {
+                progress_callback: (progress) => {
+                    if (progress.status === 'downloading') {
+                        const percent = Math.round((progress.loaded / progress.total) * 30) + 50;
+                        this.updateLoadingProgress(`Downloading QA model... ${percent}%`, percent);
+                    }
+                }
+            });
+            
+            this.updateLoadingProgress('Processing resume...', 80);
+            
+            // Load and process resume
+            await this.loadAndProcessResume();
+            
+            this.updateLoadingProgress('Ready!', 100);
+            
+            // Hide loading and show chat
+            setTimeout(() => {
+                document.getElementById('loadingSection').style.display = 'none';
+                document.getElementById('chat-window').style.display = 'flex';
+                this.isInitialized = true;
+                console.log('✅ RAG system initialized successfully');
+            }, 1000);
+            
         } catch (error) {
-            this.apiAvailable = false;
-            console.log('⚠️ Chatbot API not available, using fallback mode');
+            console.error('❌ Failed to initialize RAG system:', error);
+            this.updateLoadingProgress('Failed to load AI models. Please refresh.', 0);
         }
     }
     
@@ -56,11 +95,20 @@ class SahibpreetChatbot {
         widget.className = `chatbot-widget ${this.config.position}`;
         
         widget.innerHTML = `
+            <!-- Loading Section -->
+            <div class="loading-section" id="loadingSection">
+                <div class="loading-spinner"></div>
+                <p id="loadingText">Initializing AI models...</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+            
             <!-- Chat Toggle Button -->
             <div class="chat-toggle" id="chat-toggle">
                 <div class="chat-icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8 10H16M8 14H13M12 22L7 17H4C3.44772 17 3 16.5523 3 16V4C3 3.44772 3.44772 3 4 3H20C20.5523 3 21 3.44772 21 4V16C21 16.5523 20.5523 17 20 17H15L12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M8 10H16M8 14H13M12 22L7 17H4C3.44772 17 3 16.5523 3 4 3H20C20.5523 3 21 3.44772 21 4V16C21 16.5523 20.5523 17 20 17H15L12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </div>
                 <div class="close-icon" style="display: none;">
@@ -117,7 +165,7 @@ class SahibpreetChatbot {
                         </button>
                     </div>
                     <div class="powered-by">
-                        Powered by AI • Ask about experience, skills, projects
+                        Powered by 🤗 Transformers.js • Ask about experience, skills, projects
                     </div>
                 </div>
             </div>
@@ -151,6 +199,52 @@ class SahibpreetChatbot {
             .chatbot-widget.bottom-left {
                 bottom: 20px;
                 left: 20px;
+            }
+            
+            /* Loading Section */
+            .loading-section {
+                position: absolute;
+                bottom: 80px;
+                right: 0;
+                width: 300px;
+                background: white;
+                border-radius: 16px;
+                padding: 24px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+                border: 1px solid #e5e7eb;
+                text-align: center;
+            }
+            
+            .loading-spinner {
+                width: 32px;
+                height: 32px;
+                border: 3px solid #f3f4f6;
+                border-top: 3px solid #2563eb;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 16px;
+            }
+            
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            .progress-bar {
+                width: 100%;
+                height: 8px;
+                background: #f3f4f6;
+                border-radius: 4px;
+                overflow: hidden;
+                margin-top: 16px;
+            }
+            
+            .progress-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #2563eb, #8b5cf6);
+                border-radius: 4px;
+                transition: width 0.3s ease;
+                width: 0%;
             }
             
             /* Toggle Button */
@@ -433,6 +527,21 @@ class SahibpreetChatbot {
             
             /* Dark mode */
             @media (prefers-color-scheme: dark) {
+                .loading-section {
+                    background: #1f2937;
+                    border-color: #374151;
+                    color: #f9fafb;
+                }
+                
+                .loading-spinner {
+                    border-color: #374151;
+                    border-top-color: #3b82f6;
+                }
+                
+                .progress-bar {
+                    background: #374151;
+                }
+                
                 .bot-message .message-content {
                     background: #374151;
                     color: #f9fafb;
@@ -489,142 +598,8 @@ class SahibpreetChatbot {
         });
     }
     
-    async loadSuggestions() {
-        try {
-            if (this.apiAvailable === true) {
-                const response = await fetch(`${this.config.apiUrl}/chat/suggestions`);
-                const data = await response.json();
-                
-                if (data.suggestions) {
-                    this.displaySuggestions(data.suggestions.slice(0, 3));
-                    return;
-                }
-            }
-        } catch (error) {
-            // Fall through to default suggestions
-        }
-        
-        // Fallback suggestions
-        const defaultSuggestions = [
-            "What is Sahibpreet's experience with GenAI?",
-            "Tell me about his technical skills",
-            "What projects has he worked on?"
-        ];
-        
-        this.displaySuggestions(defaultSuggestions);
-    }
-    
-    displaySuggestions(suggestions) {
-        const container = document.getElementById('chat-suggestions');
-        container.innerHTML = suggestions.map(suggestion => 
-            `<div class="suggestion-chip" onclick="sahibpreetChatbot.sendSuggestion('${suggestion}')">${suggestion}</div>`
-        ).join('');
-    }
-    
-    toggleChat() {
-        this.isOpen = !this.isOpen;
-        const window = document.getElementById('chat-window');
-        const chatIcon = document.querySelector('.chat-icon');
-        const closeIcon = document.querySelector('.close-icon');
-        
-        if (this.isOpen) {
-            window.style.display = 'flex';
-            chatIcon.style.display = 'none';
-            closeIcon.style.display = 'block';
-            
-            // Focus input
-            setTimeout(() => {
-                document.getElementById('chat-input').focus();
-            }, 100);
-        } else {
-            window.style.display = 'none';
-            chatIcon.style.display = 'block';
-            closeIcon.style.display = 'none';
-        }
-    }
-    
-    async sendMessage() {
-        const input = document.getElementById('chat-input');
-        const message = input.value.trim();
-        
-        if (!message) return;
-        
-        // Add user message
-        this.addMessage(message, 'user');
-        input.value = '';
-        
-        // Show typing indicator
-        this.showTyping();
-        
-        // Step 1: Check guardrails first
-        const guardrailCheck = this.checkGuardrails(message);
-        if (!guardrailCheck.isValid) {
-            setTimeout(() => {
-                this.hideTyping();
-                this.addMessage(guardrailCheck.response, 'bot');
-                document.getElementById('chat-suggestions').innerHTML = '';
-            }, 1000);
-            return;
-        }
-        
-        // Send to backend API (which calls Groq)
-        try {
-            const response = await fetch(`${this.config.apiUrl}/chat`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: message
-                })
-            });
-            
-            if (!response.ok) {
-                throw new Error('Backend API request failed');
-            }
-            
-            const data = await response.json();
-            this.hideTyping();
-            this.addMessage(data.response, 'bot');
-            document.getElementById('chat-suggestions').innerHTML = '';
-            
-        } catch (error) {
-            console.error('Backend API error:', error);
-            // Simple error message when backend fails
-            this.hideTyping();
-            this.addMessage("I'm having trouble processing your question right now. Please make sure the chatbot backend is running (python app.py in chatbot folder).", 'bot');
-            document.getElementById('chat-suggestions').innerHTML = '';
-        }
-    }
-    
-    checkGuardrails(message) {
-        const messageLower = message.toLowerCase().trim();
-        
-        // Block off-topic questions
-        const blockedKeywords = [
-            'weather', 'politics', 'religion', 'other people', 'someone else',
-            'another person', 'family', 'relationship', 'dating', 'marriage',
-            'illegal', 'harmful', 'dangerous', 'violence', 'personal life'
-        ];
-        
-        if (blockedKeywords.some(keyword => messageLower.includes(keyword))) {
-            return {
-                isValid: false,
-                response: "I can only answer questions about Sahibpreet Singh's professional background, skills, and experience. Please ask about his work, projects, or technical expertise."
-            };
-        }
-        
-        return { isValid: true };
-    }
-    
-    async callGroqDirect(message) {
-        // Get API key from window object (you need to set this in your HTML)
-        const GROQ_API_KEY = window.GROQ_API_KEY;
-        
-        if (!GROQ_API_KEY) {
-            throw new Error('Groq API key not configured');
-        }
-        
+    async loadAndProcessResume() {
+        // Resume content
         const resumeContent = `# Sahibpreet Singh
 **GenAI Consultant • Production ML Systems • $700K+ Project Impact**
 
@@ -711,45 +686,224 @@ Novel insights into subword optimization for production LLMs
 - **100+ engineers mentored** in AI/ML practices and best practices
 - **IEEE Hackathon Winner (2nd Place)** for Explainable AI solution
 - **Technical content creator** with growing audience on LinkedIn`;
-
-        // Try direct Groq API call (may fail due to CORS)
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${GROQ_API_KEY}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile',
-                messages: [
-                    {
-                        role: 'system',
-                        content: `You are an AI assistant representing Sahibpreet Singh. Answer questions about his professional background based on his resume below. Be professional, concise, and format responses with proper bullet points using • symbols.
-
-RESUME:
-${resumeContent}
-
-Only answer questions about Sahibpreet Singh based on this resume information. Format your responses with clear bullet points and structure.`
-                    },
-                    {
-                        role: 'user',
-                        content: message
-                    }
-                ],
-                temperature: 0.7,
-                max_tokens: 500
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error('Groq API request failed');
+        
+        // Chunk the resume into semantic sections
+        this.resumeChunks = this.chunkText(resumeContent);
+        
+        // Generate embeddings for each chunk
+        for (let i = 0; i < this.resumeChunks.length; i++) {
+            const embedding = await this.embeddingModel(this.resumeChunks[i].text);
+            this.embeddings.push({
+                index: i,
+                embedding: embedding.data,
+                text: this.resumeChunks[i].text,
+                section: this.resumeChunks[i].section
+            });
         }
-
-        const data = await response.json();
-        return data.choices[0].message.content.trim();
     }
     
-    // Removed complex fallback logic - now just guardrails + Groq API
+    chunkText(text) {
+        const chunks = [];
+        const sections = text.split(/\n## /);
+        
+        sections.forEach((section, index) => {
+            if (section.trim()) {
+                // Add back the ## for sections after the first
+                const sectionText = index > 0 ? '## ' + section : section;
+                const lines = sectionText.split('\n');
+                const sectionTitle = lines[0].replace(/^#+\s*/, '');
+                
+                // For longer sections, split into smaller chunks
+                if (sectionText.length > 500) {
+                    const paragraphs = sectionText.split(/\n\n+/);
+                    let currentChunk = '';
+                    
+                    paragraphs.forEach(paragraph => {
+                        if (currentChunk.length + paragraph.length > 500 && currentChunk) {
+                            chunks.push({
+                                text: currentChunk.trim(),
+                                section: sectionTitle
+                            });
+                            currentChunk = paragraph;
+                        } else {
+                            currentChunk += (currentChunk ? '\n\n' : '') + paragraph;
+                        }
+                    });
+                    
+                    if (currentChunk) {
+                        chunks.push({
+                            text: currentChunk.trim(),
+                            section: sectionTitle
+                        });
+                    }
+                } else {
+                    chunks.push({
+                        text: sectionText.trim(),
+                        section: sectionTitle
+                    });
+                }
+            }
+        });
+        
+        return chunks;
+    }
+    
+    async findRelevantChunks(question, topK = 3) {
+        // Generate embedding for the question
+        const questionEmbedding = await this.embeddingModel(question);
+        
+        // Calculate cosine similarity with all chunks
+        const similarities = this.embeddings.map(chunk => ({
+            ...chunk,
+            similarity: this.cosineSimilarity(questionEmbedding.data, chunk.embedding)
+        }));
+        
+        // Sort by similarity and return top K
+        similarities.sort((a, b) => b.similarity - a.similarity);
+        return similarities.slice(0, topK);
+    }
+    
+    cosineSimilarity(a, b) {
+        const dotProduct = a.reduce((sum, a_i, i) => sum + a_i * b[i], 0);
+        const magnitudeA = Math.sqrt(a.reduce((sum, a_i) => sum + a_i * a_i, 0));
+        const magnitudeB = Math.sqrt(b.reduce((sum, b_i) => sum + b_i * b_i, 0));
+        return dotProduct / (magnitudeA * magnitudeB);
+    }
+    
+    updateLoadingProgress(text, percent) {
+        const loadingText = document.getElementById('loadingText');
+        const progressFill = document.getElementById('progressFill');
+        
+        if (loadingText) loadingText.textContent = text;
+        if (progressFill) progressFill.style.width = `${percent}%`;
+    }
+    
+    async loadSuggestions() {
+        // Default suggestions for the RAG system
+        const defaultSuggestions = [
+            "What is Sahibpreet's experience with GenAI?",
+            "Tell me about his technical skills",
+            "What projects has he worked on?"
+        ];
+        
+        this.displaySuggestions(defaultSuggestions);
+    }
+    
+    displaySuggestions(suggestions) {
+        const container = document.getElementById('chat-suggestions');
+        container.innerHTML = suggestions.map(suggestion => 
+            `<div class="suggestion-chip" onclick="sahibpreetChatbot.sendSuggestion('${suggestion}')">${suggestion}</div>`
+        ).join('');
+    }
+    
+    toggleChat() {
+        this.isOpen = !this.isOpen;
+        const window = document.getElementById('chat-window');
+        const chatIcon = document.querySelector('.chat-icon');
+        const closeIcon = document.querySelector('.close-icon');
+        
+        if (this.isOpen) {
+            window.style.display = 'flex';
+            chatIcon.style.display = 'none';
+            closeIcon.style.display = 'block';
+            
+            // Focus input
+            setTimeout(() => {
+                document.getElementById('chat-input').focus();
+            }, 100);
+        } else {
+            window.style.display = 'none';
+            chatIcon.style.display = 'block';
+            closeIcon.style.display = 'none';
+        }
+    }
+    
+    async sendMessage() {
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+        
+        if (!message || !this.isInitialized) return;
+        
+        // Add user message
+        this.addMessage(message, 'user');
+        input.value = '';
+        
+        // Show typing indicator
+        this.showTyping();
+        
+        // Check guardrails first
+        const guardrailCheck = this.checkGuardrails(message);
+        if (!guardrailCheck.isValid) {
+            setTimeout(() => {
+                this.hideTyping();
+                this.addMessage(guardrailCheck.response, 'bot');
+                document.getElementById('chat-suggestions').innerHTML = '';
+            }, 1000);
+            return;
+        }
+        
+        try {
+            // RAG process
+            const relevantChunks = await this.findRelevantChunks(message);
+            
+            if (relevantChunks.length === 0 || relevantChunks[0].similarity < 0.3) {
+                this.hideTyping();
+                this.addMessage("I can only answer questions about Sahibpreet Singh's professional background, skills, and experience. Please ask about his work, projects, or technical expertise.", 'bot');
+                document.getElementById('chat-suggestions').innerHTML = '';
+                return;
+            }
+            
+            // Create context from relevant chunks
+            const context = relevantChunks.map(chunk => chunk.text).join('\n\n');
+            
+            // Use QA model to generate response
+            const qaResult = await this.qaModel({
+                question: message,
+                context: context
+            });
+            
+            // Format and add response
+            let response = qaResult.answer;
+            
+            // Add source attribution
+            const uniqueSections = [...new Set(relevantChunks.map(chunk => chunk.section))];
+            if (uniqueSections.length > 0) {
+                response += `\n\n*Source: ${uniqueSections.join(', ')}*`;
+            }
+            
+            this.hideTyping();
+            this.addMessage(response, 'bot');
+            document.getElementById('chat-suggestions').innerHTML = '';
+            
+        } catch (error) {
+            console.error('RAG processing error:', error);
+            this.hideTyping();
+            this.addMessage("I'm having trouble processing your question right now. Please try rephrasing your question.", 'bot');
+            document.getElementById('chat-suggestions').innerHTML = '';
+        }
+    }
+    
+    checkGuardrails(message) {
+        const messageLower = message.toLowerCase().trim();
+        
+        // Block off-topic questions
+        const blockedKeywords = [
+            'weather', 'politics', 'religion', 'other people', 'someone else',
+            'another person', 'family', 'relationship', 'dating', 'marriage',
+            'illegal', 'harmful', 'dangerous', 'violence', 'personal life'
+        ];
+        
+        if (blockedKeywords.some(keyword => messageLower.includes(keyword))) {
+            return {
+                isValid: false,
+                response: "I can only answer questions about Sahibpreet Singh's professional background, skills, and experience. Please ask about his work, projects, or technical expertise."
+            };
+        }
+        
+        return { isValid: true };
+    }
+    
+    // RAG-based response generation (removed external API dependency)
     
     sendSuggestion(suggestion) {
         const input = document.getElementById('chat-input');
@@ -803,20 +957,14 @@ Only answer questions about Sahibpreet Singh based on this resume information. F
     }
     
     generateConversationId() {
-        return 'conv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        return 'conv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
     }
 }
 
 // Initialize the chatbot when the DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-detect API URL or use fallback
-    const apiUrl = window.location.hostname === 'localhost' 
-        ? 'http://localhost:8000' 
-        : 'https://your-chatbot-api.herokuapp.com'; // Replace with your deployed API
-    
-    // Create global instance
+    // Create global instance with RAG system
     window.sahibpreetChatbot = new SahibpreetChatbot({
-        apiUrl: apiUrl,
         position: 'bottom-right',
         theme: 'auto',
         autoStart: true
