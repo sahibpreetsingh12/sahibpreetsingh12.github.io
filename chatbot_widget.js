@@ -6,9 +6,10 @@
 // Import Transformers.js
 import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js';
 
-// Disable remote models and use local cache
-env.allowRemoteModels = false;
+// Configure Transformers.js for browser use
+env.allowRemoteModels = true;
 env.allowLocalModels = true;
+env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/';
 
 class SahibpreetChatbot {
     constructor(config = {}) {
@@ -84,7 +85,12 @@ class SahibpreetChatbot {
             
         } catch (error) {
             console.error('❌ Failed to initialize RAG system:', error);
-            this.updateLoadingProgress('Failed to load AI models. Please refresh.', 0);
+            this.updateLoadingProgress(`Error: ${error.message}. Check console for details.`, 0);
+            
+            // Show fallback mode after 3 seconds
+            setTimeout(() => {
+                this.enableFallbackMode();
+            }, 3000);
         }
     }
     
@@ -778,6 +784,46 @@ Novel insights into subword optimization for production LLMs
         if (progressFill) progressFill.style.width = `${percent}%`;
     }
     
+    enableFallbackMode() {
+        // Hide loading and show chat with fallback functionality
+        document.getElementById('loadingSection').style.display = 'none';
+        document.getElementById('chat-window').style.display = 'flex';
+        this.isInitialized = true;
+        
+        // Add fallback message
+        this.addMessage("⚠️ AI models couldn't load, but I can still help with basic questions about Sahibpreet Singh's resume using fallback responses.", 'bot');
+        
+        console.log('🔄 Chatbot running in fallback mode');
+    }
+    
+    getFallbackResponse(message) {
+        const messageLower = message.toLowerCase();
+        
+        // Simple keyword-based responses for fallback
+        if (messageLower.includes('experience') || messageLower.includes('work') || messageLower.includes('job')) {
+            return "Sahibpreet Singh is a GenAI Consultant at CGI with expertise in production-scale AI systems. He has delivered $700K+ project value and has previous experience at AI Talentflow, Tatras Data, and ZS Associates in ML/AI roles.";
+        }
+        
+        if (messageLower.includes('skill') || messageLower.includes('technology') || messageLower.includes('programming')) {
+            return "His technical skills include:\n• AI/ML: PyTorch, Transformers, Langchain, LlamaIndex\n• Agentic AI: CrewAI, Langgraph, Autogen\n• Cloud: Azure, AWS\n• Languages: Python, CUDA, SQL, JavaScript\n• Data: Databricks, PySpark, Neo4j, MongoDB";
+        }
+        
+        if (messageLower.includes('project') || messageLower.includes('built') || messageLower.includes('develop')) {
+            return "Key projects include:\n• Zero-Trust RAG System - Enterprise AI security solution\n• Custom CUDA Kernels - GPU acceleration for LLM inference\n• Resume-2-ResumeRAG - Production GenAI system on AWS ECS\n• Tokenizer Fertility Research - Novel LLM optimization insights";
+        }
+        
+        if (messageLower.includes('education') || messageLower.includes('degree') || messageLower.includes('study')) {
+            return "Education:\n• Post Graduate Certificate in AI & Machine Learning | Lambton College (2024-2025)\n• Bachelor of Technology in Computer Science | Punjab Technical University (2017-2021)";
+        }
+        
+        if (messageLower.includes('achievement') || messageLower.includes('impact') || messageLower.includes('result')) {
+            return "Key achievements:\n• $700K+ project value delivered at CGI\n• 65% efficiency improvement in recruitment processes\n• 31% ML pipeline optimization\n• 100+ engineers mentored\n• IEEE Hackathon Winner (2nd Place)";
+        }
+        
+        // Default response
+        return "I can help you learn about Sahibpreet Singh's professional background. Try asking about his experience, skills, projects, education, or achievements. For more detailed information, please check his resume or LinkedIn profile.";
+    }
+    
     async loadSuggestions() {
         // Default suggestions for the RAG system
         const defaultSuggestions = [
@@ -843,40 +889,49 @@ Novel insights into subword optimization for production LLMs
         }
         
         try {
-            // RAG process
-            const relevantChunks = await this.findRelevantChunks(message);
-            
-            if (relevantChunks.length === 0 || relevantChunks[0].similarity < 0.3) {
+            // Check if RAG models are available
+            if (this.embeddingModel && this.qaModel) {
+                // RAG process
+                const relevantChunks = await this.findRelevantChunks(message);
+                
+                if (relevantChunks.length === 0 || relevantChunks[0].similarity < 0.3) {
+                    this.hideTyping();
+                    this.addMessage("I can only answer questions about Sahibpreet Singh's professional background, skills, and experience. Please ask about his work, projects, or technical expertise.", 'bot');
+                    document.getElementById('chat-suggestions').innerHTML = '';
+                    return;
+                }
+                
+                // Create context from relevant chunks
+                const context = relevantChunks.map(chunk => chunk.text).join('\n\n');
+                
+                // Use QA model to generate response
+                const qaResult = await this.qaModel({
+                    question: message,
+                    context: context
+                });
+                
+                // Format and add response
+                let response = qaResult.answer;
+                
+                // Add source attribution
+                const uniqueSections = [...new Set(relevantChunks.map(chunk => chunk.section))];
+                if (uniqueSections.length > 0) {
+                    response += `\n\n*Source: ${uniqueSections.join(', ')}*`;
+                }
+                
                 this.hideTyping();
-                this.addMessage("I can only answer questions about Sahibpreet Singh's professional background, skills, and experience. Please ask about his work, projects, or technical expertise.", 'bot');
+                this.addMessage(response, 'bot');
                 document.getElementById('chat-suggestions').innerHTML = '';
-                return;
+            } else {
+                // Fallback mode - simple keyword matching
+                const response = this.getFallbackResponse(message);
+                this.hideTyping();
+                this.addMessage(response, 'bot');
+                document.getElementById('chat-suggestions').innerHTML = '';
             }
-            
-            // Create context from relevant chunks
-            const context = relevantChunks.map(chunk => chunk.text).join('\n\n');
-            
-            // Use QA model to generate response
-            const qaResult = await this.qaModel({
-                question: message,
-                context: context
-            });
-            
-            // Format and add response
-            let response = qaResult.answer;
-            
-            // Add source attribution
-            const uniqueSections = [...new Set(relevantChunks.map(chunk => chunk.section))];
-            if (uniqueSections.length > 0) {
-                response += `\n\n*Source: ${uniqueSections.join(', ')}*`;
-            }
-            
-            this.hideTyping();
-            this.addMessage(response, 'bot');
-            document.getElementById('chat-suggestions').innerHTML = '';
             
         } catch (error) {
-            console.error('RAG processing error:', error);
+            console.error('Message processing error:', error);
             this.hideTyping();
             this.addMessage("I'm having trouble processing your question right now. Please try rephrasing your question.", 'bot');
             document.getElementById('chat-suggestions').innerHTML = '';
