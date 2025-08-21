@@ -1,7 +1,7 @@
 {
-  "timestamp": "2025-08-17T23:35:50.340945",
+  "timestamp": "2025-08-21T17:00:24.606750",
   "gpu_temp": 72,
-  "memory_usage": 2.8,
-  "cpu_usage": 3.0,
+  "memory_usage": 3.0,
+  "cpu_usage": 41.5,
   "training_progress": 87
 }
