@@ -7,7 +7,7 @@ tags: [Nvidia, Triton, GPU Programming]
 author: Sahibpreet Singh
 pinned: true
 ---
-Starting from start month of July-2025 super scared and tensed. I was doing everything left right and centre to secure a job and in the middle of all this felt super helpless and during that time only got the hit to make myself learn something which I always feared GPU programming. Yes actually how GPU's can be made to work and understand the depth of how things work and not just **.cuda()** and work done.
+Starting from start, Month of July-2025 super scared and tensed. I was doing everything left right and centre to secure a job and in the middle of all this felt super helpless and during that time only got the hit to make myself learn something which I always feared GPU programming. Yes actually how GPU's can be made to work and understand the depth of how things work and not just **.cuda()** and work done.
 
 Truly saying, Since I was new made a choice to teach myself CUDA but after couple of weeks motivation died a slow death just because it was too time consuming. Then came to my mind the name of **Unsloth** and how they made use of **Triton** for making our beloved LLM's faster and smaller by programming things in **Triton** and this is exactly was my first motivation to learn Triton.
 
@@ -27,4 +27,40 @@ Here's the shocking part - Triton kernels look like NumPy code. Not 200 lines of
 
 Covered Why You should learn. Now  ***Terminology Alert*** :-
 
-When I started, people kept throwing around words like "blocks," "tiles," and "warps" like I was supposed to just know. Here's what they actually mean, explained like you're five (because that's what I needed):
+When I started, and saw people kept throwing around words like "blocks," "tiles," and "warps" like I was supposed to just know. Here's what they actually mean, explained like you're five (because that's what I needed):
+
+To Easy visualise - think of Big Warehouse :-
+
+1. Threads - The Individual Workers
+A thread is the smallest unit of execution on a GPU. Think of it as one worker following the same instruction manual as everyone else, but working on their own piece of data. 
+Your GPU runs thousands of threads in parallel - they all execute the same code simultaneously, just on different numbers.
+
+Simple example: If you're adding two arrays of 10,000 elements, you might have 10,000 threads where thread #0 adds element[0], thread #1 adds element[1], and so on. All doing the same operation (addition), just on different bits of data.
+
+2. Warps - The Synchronized Squad 
+
+Note - In Next Blogs, We will dive deeper in **Warps** when we will Understand `Coalesced vs Uncoalesced Memory Access`
+
+Here's where it gets interesting. Threads don't work alone - they move in groups of 32 called "warps." Think of it like a rowing team - all 32 threads in a warp execute the same instruction at the same time. They're perfectly synchronized. If one thread in a warp takes a different code path (like in an if-statement), the others wait. This is why branching in GPU code can kill performance.
+
+3. Blocks - The Team with Shared Memory
+
+A block is a group of threads (multiple warps) that can talk to each other through shared memory. Imagine a team of workers who share a whiteboard. In Triton, when you write `tl.program_id(0)`, you're asking "which team (block) am I?" Typically 256-1024 threads per block.
+
+The crucial part: threads in the same block can share data quickly. Threads in different blocks? They can't talk directly - they'd have to write notes in global memory (beleive me that's very slow).
+
+Bigger Perspective - Whenever we try and write code in Triton our goal is to write such way that shared memory is used the most.
+
+4. Tiles - The Chunk of Work (Why Triton is "Tile Programming")
+This is where Triton gets its identity. A **Tile** is just a chunk of your data that one block processes. Instead of thinking "thread 457 processes element 457," you think "block 3 processes this 32×32 tile of the matrix."
+
+Sample Code
+```python
+BLOCK_SIZE = 1024
+pid = tl.program_id(0)
+tile_start = pid * BLOCK_SIZE
+tile_elements = tl.arange(0, BLOCK_SIZE)  # This is your tile!
+```
+The magic: Triton automatically maps your tile operations to threads. You say "process this tile," Triton figures out which threads do what. You think in chunks, not individual threads.
+
+CUDA 
