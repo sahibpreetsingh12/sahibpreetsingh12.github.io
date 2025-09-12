@@ -63,4 +63,46 @@ tile_elements = tl.arange(0, BLOCK_SIZE)  # This is your tile!
 ```
 The magic: Triton automatically maps your tile operations to threads. You say "process this tile," Triton figures out which threads do what. You think in chunks, not individual threads.
 
-CUDA 
+CUDA - This is where allows you to manage individual workers in that warehouse but on otherside
+Triton - Team A do work - A and Team B - Work B.
+
+5. Grid - All The Blocks
+The grid is just all your blocks together. If you have 1 million elements and each block handles 1024 elements, your grid has ~1000 blocks. Simple as that.
+
+Perfect- Enough of theory. Let's write code and then break it :-
+
+```python
+import torch
+import triton
+import triton.language as tl
+
+@triton.jit
+def add_kernel(
+    x_ptr,  # pointer to first input array
+    y_ptr,  # pointer to second input array  
+    output_ptr,  # pointer to output array
+    n_elements,  # total number of elements
+    BLOCK_SIZE: tl.constexpr  # this is a compile-time constant
+):
+    # Which block am I?
+    pid = tl.program_id(axis=0)
+    
+    # What's my starting position?
+    block_start = pid * BLOCK_SIZE
+    
+    # What elements do I process? (my tile)
+    offsets = block_start + tl.arange(0, BLOCK_SIZE)
+    
+    # Don't read past the end of the array
+    mask = offsets < n_elements
+    
+    # Load my tile of data
+    x = tl.load(x_ptr + offsets, mask=mask)
+    y = tl.load(y_ptr + offsets, mask=mask)
+    
+    # Do the actual work
+    output = x + y
+    
+    # Store the result
+    tl.store(output_ptr + offsets, output, mask=mask)
+```
