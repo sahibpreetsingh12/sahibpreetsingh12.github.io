@@ -127,8 +127,10 @@ For our simple addition, we just have one long aisle of packages, so we only nee
 This is majorly an analogy to help, You can surely have more than axis>2 but since  most GPU architecture's are designed with 3rd axis in mind so good number of problems can be solved with 3 axis.
 There can be scenario's where we have to use say **batch_no** so **axis=3** can be possible.
 
-![warehouse](assets/blog-1-Triton/BLOG-1-team-diag1.png)
-2. In our warehouse, each team gets an assignment that tells them **WHERE** to work. This assignment can have multiple parts depending on how complex the warehouse layout is.
+![warehouse](/assets/blog-1-Triton/BLOG-1-team-diag1.png)
+2. Finding Your Section - Where Does My Team Start?
+
+In our warehouse, each team gets an assignment that tells them **WHERE** to work. This assignment can have multiple parts depending on how complex the warehouse layout is.
 Simple Warehouse (1D) - One Long Aisle:
 
 * 1 million packages in one long row
@@ -136,3 +138,9 @@ Simple Warehouse (1D) - One Long Aisle:
 * Each team gets a simple number: Team 0, Team 1, Team 2...
 * program_id(0) returns this team number.
 * Example Team 523 handles packages 523,000-523,999
+
+We will get into how Triton handles program id with axis=1 and axis=2 in later programs.
+
+So in our program -->  **block_start = pid * BLOCK_SIZE**
+
+3. Getting Your Exact Package List
