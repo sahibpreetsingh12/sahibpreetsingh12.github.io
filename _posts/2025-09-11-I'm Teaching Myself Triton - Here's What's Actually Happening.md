@@ -18,12 +18,12 @@ Enough of back story and I feel I have explained how i got started. Let's see wh
 
 Look, I won't sell you dreams. Triton isn't going to magically 10x your career overnight. But here's what it actually did for me: it removed the fear. That intimidating gap between "I use PyTorch" and "I understand what my GPU is doing"? Triton atleast helps to bridge that.
 
-1. It allows you to write custom fucntions a.k.a `Kernels` and you can check and control certain aspects of your GPU and prevent it from sitting IDLE for most of the time.
-2. The Code Is Actually Readable
+- It allows you to write custom fucntions a.k.a `Kernels` and you can check and control certain aspects of your GPU and prevent it from sitting IDLE for most of the time.
+- The Code Is Actually Readable
 Here's the shocking part - Triton kernels look like NumPy code. Not 200 lines of CUDA with thread management and synchronization barriers. We're talking 20-30 lines that you can actually understand, modify, and debug. When something goes wrong, you can actually figure out why.
-3. Big Question? "Will you always beat Pytorch in performance"- Answer is *Yes* and *No*. If we are talking of standard operations beating Pytorch is little sloppy because you are fighting with `cuBLAS` and `cuDNN` which are written by NVIDIA wizards and will destroy your amateur matrix multiplication every time but if you come to a territory where hardware is something you have assembled and you are trying to exceute a custom version of Attention for faster inference `Triton holds your hand`.
+- Big Question? "Will you always beat Pytorch in performance"- Answer is *Yes* and *No*. If we are talking of standard operations beating Pytorch is little sloppy because you are fighting with `cuBLAS` and `cuDNN` which are written by NVIDIA wizards and will destroy your amateur matrix multiplication every time but if you come to a territory where hardware is something you have assembled and you are trying to exceute a custom version of Attention for faster inference `Triton holds your hand`.
 
-4. More Importantly - Since while learning, you will try and fight with Pytorch to see how far you came you will get in depths of all the **Standard Operations** so your understanding of concepts gets another soothing touch.
+- More Importantly - Since while learning, you will try and fight with Pytorch to see how far you came you will get in depths of all the **Standard Operations** so your understanding of concepts gets another soothing touch.
 
 Covered Why You should learn. Now  ***Terminology Alert*** :-
 
@@ -47,7 +47,7 @@ Here's where it gets interesting. Threads don't work alone - they move in groups
 
 A block is a group of threads (multiple warps) that can talk to each other through shared memory. Imagine a team of workers who share a whiteboard. In Triton, when you write `tl.program_id(0)`, you're asking "which team (block) am I?" Typically 256-1024 threads per block.
 
-The crucial part: threads in the same block can share data quickly. Threads in different blocks? They can't talk directly - they'd have to write notes in global memory (beleive me that's very slow).
+The crucial part: threads in the same block can share data quickly. Threads in different blocks? They can't talk directly - they'd have to write notes in global memory (believe me that's very slow).
 
 Bigger Perspective - Whenever we try and write code in Triton our goal is to write such way that shared memory is used the most.
 
@@ -127,7 +127,7 @@ For our simple addition, we just have one long aisle of packages, so we only nee
 This is majorly an analogy to help, You can surely have more than axis>2 but since  most GPU architecture's are designed with 3rd axis in mind so good number of problems can be solved with 3 axis.
 There can be scenario's where we have to use say **batch_no** so **axis=3** can be possible.
 
-![warehouse](/assets/blog-1-Triton/BLOG-1-team-diag1.png)
+![warehouse](/assets/blog-1-Triton/blog-1-team-diag-1.png)
 2. Finding Your Section - Where Does My Team Start?
 
 In our warehouse, each team gets an assignment that tells them **WHERE** to work. This assignment can have multiple parts depending on how complex the warehouse layout is.
@@ -144,3 +144,88 @@ We will get into how Triton handles program id with axis=1 and axis=2 in later p
 So in our program -->  **block_start = pid * BLOCK_SIZE**
 
 3. Getting Your Exact Package List
+```python
+offsets = block_start + tl.arange(0, BLOCK_SIZE)
+```
+Remeber each team has workers (i.e Threads)
+`tl.arange(0, BLOCK_SIZE)` creates [0, 1, 2, ..., 1023] - like handing out clipboard numbers to each worker in the team.
+For Team 2 (starting at 2048):
+
+* Worker 0 gets package 2048 (2048 + 0)
+* Worker 1 gets package 2049 (2048 + 1)
+* Worker 1023 gets package 3071 (2048 + 1023)
+
+These `offsets` are the exact package numbers this team will handle.
+
+4. The Safety Checklist - Why Masks Save Your Kernel
+```python
+mask = offsets < n_elements
+```
+The Problem: What if you have 5000 packages but Team 4 tries to process packages 4096-5119? Packages 5000-5119 don't exist!
+![warehouse](/assets/blog-1-Triton/blog-1-warehouse-diag-2.png)
+The mask is your safety checklist:
+
+* Packages 4096-4999: ✓ (exist, process them)
+* Packages 5000-5119: ✗ (don't exist, skip)
+Now when i was learning there were numerous number of times when I was trying to access position which didn't followed masking condition and these were my obsevations :-
+- Kernel Crashes immediately and Gives Bad memory Error
+- Reads garbage memory and gives wrong results. (This happened when mostly pactising on [leetgpu](leetgpu.com))
+
+5. Actually Moving the Packages
+```python
+x = tl.load(x_ptr + offsets, mask=mask)
+y = tl.load(y_ptr + offsets, mask=mask)
+output = x + y
+tl.store(output_ptr + offsets, output, mask=mask)
+```
+This is the actual work:
+
+- Load: "Team, grab packages from shelves X and Y (but check your safety list first!)"
+- Compute: "Add contents of matching packages together"
+- Store: "Put results on the output shelf (again, check safety list!)"
+
+The mask in `tl.load` returns 0 for non-existent packages. The mask in tl.store prevents writing to non-existent locations.
+
+BOOM! This is your first Baby Triton Kernel up and Kicking.
+
+Combine above code and the cell below and you can see the actual piece kicking.
+
+```python
+def add(x: torch.Tensor, y: torch.Tensor):
+    # Create output tensor
+    output = torch.empty_like(x)
+    assert x.is_cuda and y.is_cuda, "Tensors must be on GPU!"
+    
+    # Get total number of elements
+    n_elements = output.numel()
+    
+    # Define grid dimensions (how many blocks/teams we need)
+    grid = lambda meta: (triton.cdiv(n_elements, meta['BLOCK_SIZE']),)
+    
+    # Launch the kernel!
+    add_kernel[grid](x, y, output, n_elements, BLOCK_SIZE=1024)
+    
+    return output
+
+# Test time
+x = torch.randn(1_000_000, device='cuda')
+y = torch.randn(1_000_000, device='cuda')
+
+triton_result = add(x, y)
+pytorch_result = x + y
+
+# Check if it's working
+print(f"Results match: {torch.allclose(triton_result, pytorch_result)}")
+print(f"Max difference: {(triton_result - pytorch_result).abs().max().item()}")
+```
+
+## Some Common Mistakes That Wasted My Time :-
+1. BLOCK_SIZE - Triton always runs with block size in power of 2
+
+Can't Stress anymore how simple bug on the same time tricky it is to set masks.
+2. No mask - kernel crashes or garbage results
+
+3. `triton.cdiv` - This divides and rounds UP. Critical for handling arrays not perfectly divisible by BLOCK_SIZE
+
+
+# Try this yourself
