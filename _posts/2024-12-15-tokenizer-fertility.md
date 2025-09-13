@@ -5,7 +5,8 @@ date: 2024-12-15
 description: "Diving deep into tokenizer behavior and how subword distribution affects LLM performance in production systems."
 tags: [llm, tokenizers, optimization]
 author: Sahibpreet Singh
-pinned: true
+pinned: false
+published: false
 ---
 
 # Fertility of Tokenizers - Why Subword Counts Matter

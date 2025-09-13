@@ -247,12 +247,16 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
             padding: 2rem;
             transition: all 0.3s ease;
             cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
         }
 
         .post-card:hover {
             transform: translateY(-5px);
             box-shadow: var(--shadow);
             border-color: var(--accent-color);
+            text-decoration: none;
         }
 
         .post-date {
@@ -301,7 +305,7 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
             }
             
             .badges {
-                flex-direction: column;
+                justify-content: center;
                 align-items: center;
             }
             
@@ -836,9 +840,11 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
         <div class="loading"><i class="fas fa-spinner fa-spin"></i> No posts yet.</div>
         {% endif %}
 
-        <p style="text-align:center; margin-top:2rem;">
-        <a class="badge" href="{{ '/posts/' | relative_url }}">View All Posts</a>
-        </p>
+        <div style="text-align:center; margin-top:2rem;">
+        <a class="badge" href="{{ '/posts/' | relative_url }}">
+            <i class="fas fa-arrow-right"></i> View All Posts
+        </a>
+        </div>
     </div>
     </section>
 
