@@ -106,3 +106,33 @@ def add_kernel(
     # Store the result
     tl.store(output_ptr + offsets, output, mask=mask)
 ```
+Perfect we will now be taking this above code as our sample to understand Triton lingo.
+
+1. **Program Id**
+
+```python
+pid = tl.program_id(axis=0) # "What's my team number?"
+```
+Now In our same warehouse analogy say today we have to ship 1 million parcel and we have 1000 teams of workers (blocks), and each team needs to know which section of packages to handle.
+* Team 0 (pid=0) goes to Section A (packages 0-999)
+* Team 1 (pid=1) goes to Section B (packages 1000-1999)
+
+But what does `axis` means here ?
+Now imagine the warehouse has multiple floors and multiple aisles:
+`program_id(0)` = Which aisle is my team assigned to? (X-axis)
+`program_id(1)` = Which floor is my team on? (Y-axis)
+`program_id(2)` = Which building section? (Z-axis)
+
+For our simple addition, we just have one long aisle of packages, so we only need `program_id(0)` - just the aisle number.
+This is majorly an analogy to help, You can surely have more than axis>2 but since  most GPU architecture's are designed with 3rd axis in mind so good number of problems can be solved with 3 axis.
+There can be scenario's where we have to use say **batch_no** so **axis=3** can be possible.
+
+![warehouse](assets/blog-1-Triton/BLOG-1-team-diag1.png)
+2. In our warehouse, each team gets an assignment that tells them **WHERE** to work. This assignment can have multiple parts depending on how complex the warehouse layout is.
+Simple Warehouse (1D) - One Long Aisle:
+
+* 1 million packages in one long row
+* 1000 teams needed
+* Each team gets a simple number: Team 0, Team 1, Team 2...
+* program_id(0) returns this team number.
+* Example Team 523 handles packages 523,000-523,999
