@@ -62,6 +62,7 @@ description: "AI/ML Consultant specializing in enterprise-grade generative AI so
 url: "https://sahibpreetsingh12.github.io"
 baseurl: ""         # keep empty for USERNAME.github.io
 timezone: Asia/Kolkata
+future: true
 
 # Author information
 author:
