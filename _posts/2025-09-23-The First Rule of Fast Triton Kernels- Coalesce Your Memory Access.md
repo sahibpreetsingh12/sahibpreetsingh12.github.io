@@ -35,7 +35,11 @@ Simple Solution ( We will dive deeper ahead ) - Keep Things In order so that our
 Goal: By the end of this post, you will understand the first most important concept for writing high-performance GPU code.
 
 But Before diving in further. Let's understand diff b/w :-
-## Concept Alert🚨 - **Memory Bound Operations** vs **Compute Bound Operations**
+
+Concept Alert🚨  
+
+### **Memory Bound Operations** vs **Compute Bound Operations**
+
 We will use same Warehouse Analogy we used in previous blog.
 
 - **Memory Bound Operation**: In our warehouse where a worker who spends most time walking between parcels rather than actually picking them up. The bottleneck is moving around, not the picking itself.
@@ -44,9 +48,12 @@ We will use same Warehouse Analogy we used in previous blog.
 
 - **But What is GPU Reality**: Most operations (including our vector addition) are memory bound - we spend more time waiting for data than computing with it.
 
-And to check which operation will be classified and how we use `The Arithmetic Intensity Test` i.e
+How to classify `The Arithmetic Intensity Test` i.e
+
 - Operations per byte < 1 = Memory Bound (focus on access patterns)
+
 - Operations per byte > 10 = Compute Bound (focus on algorithms)
+
 ![gpu-quiz]({{ site.baseurl }}/assets/blog-2-memory-coalsecing/mem-comp.png)
 
 Example - Reality check with vector addition:
@@ -66,10 +73,12 @@ In our warehouse we have:
 
 ### The Slow Way: Uncoalesced Access 🐌
 Now If I had been a Worker here pain would have been to pickup items from completely far locations. Say on a rack having 1-1000 boxes aranged horizontally 
-I am picking thing boxes numbered 234, 568, 900 etc.
-This is where I would have spent 95% of time running around, 5% actually picking parcels. Sound familiar? 🤔
+
+I am picking thing boxes numbered  `234, 568, 900` etc.
+
+This is where I would have spent **95%** of time running around, **5%** actually picking parcels. Sound familiar? 🤔
 
 ### The Fast Way: Coalesced Access ⚡
-Easisest would have been if I had to pick(same) boxes placed at 234,235,236 **coalesced**.
+Easisest would have been if I had to pick(same) boxes placed consecutively at `234,235,236` **coalesced**.
 
 **In GPU terms:** This is **coalesced memory access** - threads accessing consecutive memory locations.
