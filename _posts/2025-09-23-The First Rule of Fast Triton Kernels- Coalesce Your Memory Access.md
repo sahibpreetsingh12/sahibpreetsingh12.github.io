@@ -9,13 +9,15 @@ pinned: true
 published: true
 ---
 
-# Step 1 - How to make "Triton" faster using "Memory Coalescing"
+## Step 1 - How to make "Triton" faster using "Memory Coalescing"
 Last time we built our triton kernel a simple Vector Addition. Now on normal operations we might not feel but the real usi of Triton is to make 
 "kernels" faster without getting into hassle of CUDA (which can be little overwhelming) to start with. This is where first concept comes in called as "Memory Coalescing" comes in.
 
 ## Deep Dive - What's the Problem?
 **Pop Quiz** : What's the #1 performance killer in GPU programming? 
-![gpu-quiz](assets/blog-2-memory-coalsecing/pop_quiz.png)
+![gpu-quiz]({{ site.baseurl }}/assets/blog-2-memory-coalsecing/pop_quiz.png)
+
+Notes:
 
 🙅‍♂️ Nope. It's something so mundane you probably never thought about it: *where your data lives in memory.* Move your data wrong, and your lightning-fast GPU becomes slower than your laptop's CPU. Move it right, and you unlock 10x-100x speedups. It is just like a **Ferrari** is sitting in a shopping cart.
 
