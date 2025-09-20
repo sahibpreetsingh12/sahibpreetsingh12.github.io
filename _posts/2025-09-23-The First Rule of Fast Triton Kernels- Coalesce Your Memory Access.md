@@ -84,7 +84,9 @@ Easisest would have been if I had to pick(same) boxes placed consecutively at `2
 **In GPU terms:** This is **coalesced memory access** - threads accessing consecutive memory locations.
 
 Now Since we have understood the concept of **coalescing** the hero that supports this concept is called `Warps`. 
+
 But What is Warp?🤔
+
 In our same Warehouse terminology **A Warp = A Small Team of 32 Workers Who Must Move Together**
 
 - **GPU Reality**: Threads don't like to work independently but they loveto be grouped into **warps** of 32 threads each.
@@ -93,7 +95,7 @@ In our same Warehouse terminology **A Warp = A Small Team of 32 Workers Who Must
 
 Disclaimer - We will get into details of Warps of what and how they are useful in further blogs if you feel any vaccum. Just take the above definition as memory point to be used in this blog further.
 
-Ohkay - Theory is good. Lte's see the practical numbers to solidify the case and make it air-tight.
+Ohkay - Theory is good but let's see the practical numbers to solidify the case and make it air-tight.
 
 ```python
 # === Memory Coalescing with Multiplication ===
@@ -130,7 +132,8 @@ def multiply_scattered(x_ptr, y_ptr, out_ptr, N, BLOCK: tl.constexpr):
     offsets = pid * BLOCK + tl.arange(0, BLOCK)
     mask = offsets < N
     
-    # Scatter addresses by jumping 64 positions each time - SLOW!
+    # We have intenionally Scattered addresses by jumping 64 positions each time - To show SLOWNESS!
+
     scattered_offsets = (offsets * 64) % N
     
     x = tl.load(x_ptr + scattered_offsets, mask=mask)
@@ -157,20 +160,21 @@ def run_benchmark():
     start = torch.cuda.Event(enable_timing=True)
     end = torch.cuda.Event(enable_timing=True)
     
+    # calling our coalesced access
     start.record()
     multiply_coalesced[grid](x, y, out, N, BLOCK)
     end.record()
     torch.cuda.synchronize()
     time_coalesced = start.elapsed_time(end)
     
-    # Time scattered access  
+    # calling our non coalesced access
     start.record()
     multiply_scattered[grid](x, y, out, N, BLOCK)
     end.record()
     torch.cuda.synchronize()
     time_scattered = start.elapsed_time(end)
     
-    # Results
+    # Results time 
     print(f"Coalesced access:     {time_coalesced:.3f} ms")
     print(f"Non-coalesced access: {time_scattered:.3f} ms") 
     print(f"Slowdown factor:      {time_scattered/time_coalesced:.1f}×")
@@ -196,7 +200,7 @@ def plot_comparison(time_coalesced, time_scattered):
     plt.ylabel('Execution Time (ms)')
     plt.grid(axis='y', alpha=0.3)
     
-    # Add speedup annotation
+    #  speedup annotation
     speedup = time_scattered / time_coalesced
     plt.text(0.2, max(times) * 0.4, f'{speedup:.1f}× faster!', 
              ha='center', fontsize=14, fontweight='bold',
@@ -207,15 +211,21 @@ def plot_comparison(time_coalesced, time_scattered):
     plt.show()
 
 if __name__ == "__main__":
-    print("🚀 Memory Coalescing Benchmark")
+    print("Memory Coalescing Benchmark")
     print("=" * 40)
     
     coalesced_time, scattered_time = run_benchmark()
     plot_comparison(coalesced_time, scattered_time)
     
-    print(f"\n🎯 The takeaway: Memory access patterns matter MORE than the actual computation!")
+    print(f"\nThe takeaway: Memory access patterns matter MORE than the actual computation!")
 
 ```
+
+We will not get into basic details of code of what is `progarma_id`, `mask`, `offsets` etc since they have been already covered in previous blog [here](https://sahibpreetsingh12.github.io/posts/i-m-teaching-myself-triton-here-s-what-s-actually-happening/)
+
+but the line that is causing all the difference is `scattered_offsets = (offsets * 64) % N` you can try `scattered_offsets = (offsets * 97) % N`  # As 97 is prime
+
+In later blogs will show you how this simple trick can make your inference faster on open source llm's like Deepseek, Qwen etc and when i was learning of this trick I felt why would someone intenionally do this but because of how we write our regular code our code writing habits push us to Non-coalesced patterns of data loading and hence causing Under-utilisation of GPU.
 
 
 
