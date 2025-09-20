@@ -72,9 +72,9 @@ In our warehouse we have:
 - **Pick-up lists** = Memory access patterns
 
 ### The Slow Way: Uncoalesced Access 🐌
-Now If I had been a Worker here pain would have been to pickup items from completely far locations. Say on a rack having 1-1000 boxes aranged horizontally 
+Now If I had been a Worker here pain would have been to pickup items from completely far locations. Say on a rack having 1-1000 boxes arranged horizontally 
 
-I am picking thing boxes numbered  `234, 568, 900` etc.
+I am picking things like boxes numbered  `234, 568, 900` etc.
 
 This is where I would have spent **95%** of time running around, **5%** actually picking parcels. Sound familiar? 🤔
 
@@ -264,7 +264,7 @@ This isn't just advice - it's the **fundamental principle** that separates fast 
 Now you understand why this pattern appears in every Triton kernel - it's specifically designed to ensure consecutive memory access!
 
 
-## Conclusion: You GPU is not lame the memory access principles you are using are not efficient
+## Conclusion: It's Not the GPU, It's the Memory Access
 
 Today you learned the **single most important concept** in GPU optimization:
 
