@@ -28,7 +28,7 @@ Let me put that in perspective:
 - **The Math**: That's roughly a **82:1 mismatch!**
 
 This means your $1,600 GPU spends **98% of its time waiting** for data to arrive from memory. 
-Funny but --> Even if you upgrade to the flagship H100 ($30k), the ratio gets `*worse* - 590:1`! More horsepower, same traffic jam.
+So, Even if you upgrade to the flagship H100 ($30k), the ratio gets `*worse* - 590:1`! More horsepower, same traffic jam.
 
 Simple Solution ( We will dive deeper ahead ) - Keep Things In order so that our beloved GPU does not spends lot of time picking things (Data Points).
 
@@ -89,13 +89,14 @@ But What is Warp?🤔
 
 In our same Warehouse terminology **A Warp = A Small Team of 32 Workers Who Must Move Together**
 
-- **GPU Reality**: Threads don't like to work independently but they loveto be grouped into **warps** of 32 threads each.
+- **GPU Reality**: Threads don't like to work independently but they love to be grouped into **warps** of 32 threads each.
 - **The Catch**: All 32 threads in a warp **must execute the same instruction at the same time**
 - **Memory Implication**: When one thread in the warp needs data, ALL 32 threads pause until that memory request is fulfilled.
 
 Disclaimer - We will get into details of Warps of what and how they are useful in further blogs if you feel any vaccum. Just take the above definition as memory point to be used in this blog further.
 
-Ohkay - Theory is good but let's see the practical numbers to solidify the case and make it air-tight.
+#### Proof by Code: Let's See the Difference! 
+Theory is good but let's see the practical numbers to solidify the case and make it air-tight.
 
 ```python
 # === Memory Coalescing with Multiplication ===
@@ -118,7 +119,7 @@ def multiply_coalesced(x_ptr, y_ptr, out_ptr, N, BLOCK: tl.constexpr):
     x = tl.load(x_ptr + offsets, mask=mask)
     y = tl.load(y_ptr + offsets, mask=mask)
 
-    # creating ans stroing the results
+    # creating and stroing the results
     result = x * y
     tl.store(out_ptr + offsets, result, mask=mask)
 
@@ -193,7 +194,7 @@ def plot_comparison(time_coalesced, time_scattered):
     
     # Add value labels on bars
     for bar, time in zip(bars, times):
-        plt.text(bar.get_x() + bar.get_width()/4, bar.get_height() + 0.1, 
+        plt.text(bar.get_x() + bar.get_width()/4, bar.get_height(), 
                 f'{time:.2f}ms', ha='center', fontweight='bold')
     
     plt.title('Memory Coalescing Performance Impact', fontsize=16, fontweight='bold')
@@ -223,9 +224,44 @@ if __name__ == "__main__":
 
 We will not get into basic details of code of what is `progarma_id`, `mask`, `offsets` etc since they have been already covered in previous blog [here](https://sahibpreetsingh12.github.io/posts/i-m-teaching-myself-triton-here-s-what-s-actually-happening/)
 
-but the line that is causing all the difference is `scattered_offsets = (offsets * 64) % N` you can try `scattered_offsets = (offsets * 97) % N`  # As 97 is prime
+but the line that is causing all the difference is `scattered_offsets = (offsets * 64) % N` 
+
+Let me break down why `scattered_offsets = (offsets * 64) % N` creates chaos:
+
+- Thread 0: accesses address `0 * 64 = 0`
+- Thread 1: accesses address `1 * 64 = 64` 
+- Thread 2: accesses address `2 * 64 = 128`
+
+And instead of consecutive addresses (0,1,2,3...), threads now jump 64 positions apart! 
+
+**Here's why this breaks the warp's efficiency:**
+
+Remember, all `32 threads in a warp must wait for memory together`. With coalesced access, the GPU can satisfy all 32 threads with **one memory transaction**. But with scattered access:
+
+❌ **Warp efficiency is destroyed** - GPU needs **multiple separate memory requests**
+
+❌ All 32 threads sit idle waiting for each scattered memory fetch
+
+❌ The warp's coordinated movement becomes a liability instead of an advantage
+
+It's like our 32 chained warehouse workers trying to grab items from 32 different aisles - they're forced to move together, but now that coordination makes them **slower** instead of faster!
+
+When I ran the above code on colab (free Tier - T4 GPU) below are my results.
+![results]({{ site.baseurl }}/assets/blog-2-memory-coalsecing/coal-noncoal.png)
+
+you can try `scattered_offsets = (offsets * 97) % N`  # As 97 is prime to see more devastating effects of this phenomenon.
+
 
 In later blogs will show you how this simple trick can make your inference faster on open source llm's like Deepseek, Qwen etc and when i was learning of this trick I felt why would someone intenionally do this but because of how we write our regular code our code writing habits push us to Non-coalesced patterns of data loading and hence causing Under-utilisation of GPU.
+
+##  The Golden Rule of Fast GPU Code
+
+> **"Threads in a warp should access contiguous blocks of memory"**
+
+This isn't just advice - it's the **fundamental principle** that separates fast GPU code from slow GPU code.
+
+**Why `tl.arange(0, BLOCK_SIZE)` is everywhere:**
+Now you understand why this pattern appears in every Triton kernel - it's specifically designed to ensure consecutive memory access!
 
 
 
