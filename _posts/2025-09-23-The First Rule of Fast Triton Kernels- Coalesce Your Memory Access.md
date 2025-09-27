@@ -6,7 +6,7 @@ description: "Part-2 The First Rule of Fast Triton Kernels: Coalesce Your Memory
 tags: [Triton, Nvidia, GPU Programming]
 author: Sahibpreet Singh
 pinned: true
-published: false
+published: true
 ---
 
 ## Step 1 - How to make "Triton" faster using "Memory Coalescing"

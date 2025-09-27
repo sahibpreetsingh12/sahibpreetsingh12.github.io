@@ -27,3 +27,6 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# WARP.md - project-specific AI rules (don't commit)
+WARP.md
