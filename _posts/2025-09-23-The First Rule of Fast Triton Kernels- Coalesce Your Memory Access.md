@@ -100,7 +100,6 @@ Theory is good but let's see the practical numbers to solidify the case and make
 
 ```python
 # === Memory Coalescing with Multiplication ===
-<span style="color: #1E90FF ; font-weight: bold;"> 
 import torch
 import triton
 import triton.language as tl
@@ -220,7 +219,6 @@ if __name__ == "__main__":
     plot_comparison(coalesced_time, scattered_time)
     
     print(f"\nThe takeaway: Memory access patterns matter MORE than the actual computation!")
-</span>
 ```
 
 We will not get into basic details of code of what is `progarma_id`, `mask`, `offsets` etc since they have been already covered in previous blog [here](https://sahibpreetsingh12.github.io/posts/i-m-teaching-myself-triton-here-s-what-s-actually-happening/)
