@@ -33,6 +33,91 @@ Our kernel's(again saying it's Just like a FUNCTION in python) job is to perform
 
 -  <span style="color: #9ACD32; font-weight: bold;">Step 3</span>: Mix the Ingredients. It then takes the actual spices (Values) from inside those jars according to the recipe and mixes them together to create your final, complex flavor (Output).
 
-From the GPU's perspective, we're just building <span style="color: #9ACD32; font-weight: bold;">millions of tiny, unique recipes in parallel</span>. Our "slow" kernel today will do this one recipe at a time. Later, we'll learn how to do it much more efficiently.
+From the GPU's perspective, we're just building <span style="color: #3256cdff; font-weight: bold;">millions of tiny, unique recipes in parallel</span>. Our "slow" kernel today will do this one recipe at a time. Later, we'll learn how to do it much more efficiently.
 
 If still not convinced with my basic analogy the best place to read about this is - [Jay Alammar](https://jalammar.github.io/illustrated-transformer/)
+
+## The "Slow but Simple" Kernel: A Line-by-Line Breakdown
+
+Our goal is clarity, not speed. We will write a kernel where one GPU program handles exactly one query. This is wonderfully simple to understand and a perfect starting point.
+
+Recommended - Use Colab with T4 GPU that's enough for today's blog.
+
+```python
+import triton
+import triton.language as tl
+
+@triton.jit
+def basic_attention_kernel(
+    Q_ptr, K_ptr, V_ptr, Output_ptr,
+    seq_len, d_model, scale,
+    BLOCK_SIZE_SEQ: tl.constexpr,
+    BLOCK_SIZE_DIM: tl.constexpr
+):
+    # --- 1. GET OUR ASSIGNMENT ---
+    # Each team of workers (program) is responsible for ONE order (query).
+    # Which order is my team working on today?
+    query_idx = tl.program_id(0)
+
+    # --- 2. GET THE ORDER DETAILS (LOAD QUERY) ---
+    # We need to grab the full instruction sheet for our order (the query vector).
+    # This instruction sheet will stay on our workbench (SRAM) for the whole process.
+    dim_offsets = tl.arange(0, BLOCK_SIZE_DIM)
+    dim_mask = dim_offsets < d_model
+    # Find the memory address for our specific order's instruction sheet.
+    q_ptrs = Q_ptr + query_idx * d_model + dim_offsets
+    # Load the instruction sheet.
+    query = tl.load(q_ptrs, mask=dim_mask, other=0.0)
+
+    # --- 3. COMPARE OUR ORDER TO EVERY ITEM IN THE WAREHOUSE (COMPUTE SCORES) ---
+    # This is the slow, brute-force part of our job today.
+    # To find out which items match our order, our worker must walk down EVERY aisle.
+    scores = tl.full([BLOCK_SIZE_SEQ], value=-float('inf'), dtype=tl.float32)
+
+    # This 'for' loop is our worker walking through the warehouse, one shelf at a time.
+    for k_idx in range(seq_len):
+        if k_idx < BLOCK_SIZE_SEQ:
+            # Go to a shelf and load the label of an item (a key vector).
+            k_ptrs = K_ptr + k_idx * d_model + dim_offsets
+            key = tl.load(k_ptrs, mask=dim_mask, other=0.0)
+
+            # Compare the item's label (key) to our order instructions (query).
+            score = tl.sum(query * key) * scale
+
+            # Write down the comparison score on our clipboard.
+            scores = tl.where(tl.arange(0, BLOCK_SIZE_SEQ) == k_idx, score, scores)
+
+    # --- 4. CREATE THE FINAL RECIPE (APPLY SOFTMAX) ---
+    # Now that we've seen all the items, we convert our comparison scores
+    # into a final recipe (the attention weights). e.g., "75% item A, 25% item B".
+    seq_mask = tl.arange(0, BLOCK_SIZE_SEQ) < seq_len
+    scores = tl.where(seq_mask, scores, -float('inf'))
+    max_score = tl.max(scores, axis=0)
+    attn_weights = tl.exp(scores - max_score)
+    attn_weights = tl.where(seq_mask, attn_weights, 0.0)
+    attn_weights /= tl.sum(attn_weights, axis=0)
+
+    # --- 5. GATHER THE INGREDIENTS (COMPUTE OUTPUT) ---
+    # This is our SECOND inefficient tour of the warehouse!
+    # With recipe in hand, our worker must now go BACK to the shelves to get the actual items.
+    output = tl.zeros([BLOCK_SIZE_DIM], dtype=tl.float32)
+
+    # Another slow 'for' loop...
+    for v_idx in range(seq_len):
+        if v_idx < BLOCK_SIZE_SEQ:
+            # Go back to a shelf and get the actual contents of the box (a value vector).
+            v_ptrs = V_ptr + v_idx * d_model + dim_offsets
+            value = tl.load(v_ptrs, mask=dim_mask, other=0.0)
+
+            # Check our recipe for how much of this item to grab.
+            weight = tl.sum(tl.where(tl.arange(0, BLOCK_SIZE_SEQ) == v_idx, attn_weights, 0.0))
+            
+            # Add the ingredient to our final package.
+            output += weight * value
+
+    # --- 6. SHIP THE FINAL PACKAGE (STORE RESULT) ---
+    # Our final, blended product (the output vector) is ready.
+    # Place it on the shipping dock (store it in output memory).
+    o_ptrs = Output_ptr + query_idx * d_model + dim_offsets
+    tl.store(o_ptrs, output, mask=dim_mask)
+```
