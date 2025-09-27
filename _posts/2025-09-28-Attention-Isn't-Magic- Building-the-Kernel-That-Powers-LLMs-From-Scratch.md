@@ -25,11 +25,11 @@ Imagine you want to create a new flavor (the Output).
 -  Values: Inside each jar is the actual spice itself. This is the Value vector.
 
 Our kernel's(again saying it's Just like a FUNCTION in python) job is to perform these steps for each Query:
--  Step 1: Find the Matches. It compares your desired taste profile (Query) to the label on every single jar (Key) to see how well they match. This generates your similarity scores.
+-  <span style="color: #9ACD32; font-weight: bold;">Step 1</span>: Find the Matches. It compares your desired taste profile (Query) to the label on every single jar (Key) to see how well they match. This generates your similarity scores.
 
--  Step 2: Create the Recipe. It runs these scores through a softmax to create the final recipe: "Use 75% from the Cayenne jar, 23% from the Smoked Paprika jar, and 2% from the Cinnamon jar."
+-  <span style="color: #9ACD32; font-weight: bold;">Step 2</span>: Create the Recipe. It runs these scores through a softmax to create the final recipe: "Use 75% from the Cayenne jar, 23% from the Smoked Paprika jar, and 2% from the Cinnamon jar."
 
--  Step 3: Mix the Ingredients. It then takes the actual spices (Values) from inside those jars according to the recipe and mixes them together to create your final, complex flavor (Output).
+-  <span style="color: #9ACD32; font-weight: bold;">Step 3</span>: Mix the Ingredients. It then takes the actual spices (Values) from inside those jars according to the recipe and mixes them together to create your final, complex flavor (Output).
 
 From the GPU's perspective, we're just building `millions of tiny, unique recipes in parallel`. Our "slow" kernel today will do this one recipe at a time. Later, we'll learn how to do it much more efficiently.
 
