@@ -125,9 +125,20 @@ def basic_attention_kernel(
     o_ptrs = Output_ptr + query_idx * d_model + dim_offsets
     tl.store(o_ptrs, output, mask=dim_mask)
 ```
-Perfect Code Hopefully helps. Now let's break it :-
-First Question that came to my mind when I started reading and learning how to implement attention was -  Why Only one `program_id` ?
+Now let's break it :-
+
+First Question - <span style="font-size: 1.2em; font-weight: bold;"> Why Only one `program_id` ?</span>
 
 But before I answer - 
 
 <span style="font-size: 1.1em; font-weight: bold; color: #9ACD32;">Pop Quiz</span>: If we have 1000 queries to process, how many programs should we launch? 🤔
+
+The answer wasn't obvious to me as well :-
+
+```python
+# We launch exactly seq_len programs - one per query
+grid = (seq_len,)  # If seq_len = 1000, we get 1000 programs
+program_id(0)  # Each sequence (in simple words each token) gets ID: 0, 1, 2, ..., 999
+```
+
+But Question was <span style="font-size: 1.1em; font-weight: bold">Why not program_id(1) or 2D grid?</span> Because attention is fundamentally a row-wise operation:
