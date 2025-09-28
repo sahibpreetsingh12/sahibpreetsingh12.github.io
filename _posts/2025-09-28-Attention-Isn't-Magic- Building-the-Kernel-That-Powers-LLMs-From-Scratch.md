@@ -198,7 +198,9 @@ The Restaurant Analogy:
 
 - Each trip is efficient (coalesced), but we make 2 × seq_len trips total!
 
-Now to practically see how inefficient these numbers are let's take seq_len=1024, d_model=512
+Now to practically see how inefficient these numbers are let's take 
+
+`seq_len=1024, d_model=512`
 
 ```python
 Query loads:    1 × 512 = 512 elements
@@ -209,4 +211,4 @@ Total:          1,048,888 elements loaded per query
 
 Out Each program loads <span style="color: #9ACD32; font-weight: bold;">2000x</span> more data than it needs for the query itself! 
 
-That's like a chef reading the entire cookbook for every single dish - technically it works, but it's wildly inefficient.
+Our chef's  reading the entire cookbook for every single dish - technically it works, but it's wildly inefficient.
