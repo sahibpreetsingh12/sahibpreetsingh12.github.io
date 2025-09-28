@@ -100,18 +100,20 @@ def basic_attention_kernel(
     
     output = tl.zeros([BLOCK_SIZE_DIM], dtype=tl.float32)
 
+    # 5. Second trip through warehouse - collect ingredients per recipe
+    output = tl.zeros([BLOCK_SIZE_DIM], dtype=tl.float32)
+
     for v_idx in range(seq_len):
         if v_idx < BLOCK_SIZE_SEQ:
-            # Get the actual value vector
+            # Get the actual spice from this jar (value vector)
             v_ptrs = V_ptr + v_idx * d_model + dim_offsets
             value = tl.load(v_ptrs, mask=dim_mask, other=0.0)
-
             
+            # How much of this spice does our recipe call for?
             weight = tl.sum(tl.where(tl.arange(0, BLOCK_SIZE_SEQ) == v_idx, attn_weights, 0.0))
             
-            
+            # Add this ingredient to our final dish
             output += weight * value
-
     # 5. storing the results 
     
     o_ptrs = Output_ptr + query_idx * d_model + dim_offsets
@@ -306,3 +308,41 @@ but results I got are
 <div align="center">
   <img src="{{ site.baseurl }}/assets/blog-3-simple-attention/co.png" alt="cooking-analogy" style="max-width: 100%; height: auto;">
 </div>
+
+Now <span style="font-size: 1.2em; font-weight: bold; color: #ff6b35;">Why the gulf keeps on increasing as we increase seq_len and dimension we use?</span>
+
+Our kernel is doing two things wrong :
+
+1.  **Sequential Memory Access**: We make 2,048 separate trips (1024 keys + 1024 values)
+
+2. **No Sharing**: Every program loads the same K,V data independently. (We will do KV cache eventually)
+
+In Simple Terms our chef is going back and forth in warehouse first to pickup each ingredient and then while making recipe reads complete cookbook to make our dish. Which causes these so much big delays.
+
+## Key Takeways
+
+- We took the abstract math `softmax(QK^T/√d)V` and turned it into working GPU code that you can run and understand
+
+- Made sure we are applying Memory Coalescing principle.
+
+- Identified the bottlenecks - The extreme slowdown isn't mysterious—it's those sequential loops that make our GPU wait instead of compute
+
+
+The Performance Reality is Production kernels aren't just about correctness; they're about eliminating waste. Our kernel wastes memory bandwidth like a leaky faucet, but now we know exactly where the leaks are.
+
+## What's Next
+
+Next time, we'll fix our biggest bottleneck with <span style="color: #9ACD32; font-weight: bold;">vectorized loading</span>. Instead of the chef making 1,024 individual trips to the pantry, we'll teach them to load multiple spice jars at once: Keeping the mathematical correctness still the same.
+
+```python
+for k_idx in range(seq_len):  # 1024 separate trips
+    key = load_one_key(k_idx)  # Load one key at a time
+    process(key)
+```
+
+In next blog will dig into how
+```python
+keys_batch = load_multiple_keys(0, 32)  # Load 32 keys at once!  
+process_batch(keys_batch)               # Process them together
+```
+Makes a hell lot of difference.
