@@ -128,4 +128,6 @@ def basic_attention_kernel(
 Perfect Code Hopefully helps. Now let's break it :-
 First Question that came to my mind when I started reading and learning how to implement attention was -  Why Only one `program_id` ?
 
-But before I answer - Pop Quiz: If we have 1000 queries to process, how many programs should we launch? 🤔
+But before I answer - 
+
+<span style="font-size: 1.1em; font-weight: bold; color: #9ACD32;">Pop Quiz</span>: If we have 1000 queries to process, how many programs should we launch? 🤔
