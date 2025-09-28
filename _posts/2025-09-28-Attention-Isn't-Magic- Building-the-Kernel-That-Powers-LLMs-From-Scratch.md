@@ -37,7 +37,7 @@ Our kernel's(again saying it's Just like a FUNCTION in python) job is to perform
 
 -  <span style="color: #9ACD32; font-weight: bold;">Step 3</span>: Mix the Ingredients. It then takes the actual spices (Values) from inside those jars according to the recipe and mixes them together to create your final, complex flavor (Output).
 
-From the GPU's perspective, we're just building <span style="color: #3256cdff; font-weight: bold; font-size: 1.2em;">millions of tiny, unique recipes in parallel</span>. Our "slow" kernel today will do this one recipe at a time. Later, we'll learn how to do it much more efficiently.
+From the GPU's perspective, we're just building <span style="color: #3256cdff; font-weight: bold;">millions of tiny, unique recipes in parallel</span>. Our "slow" kernel today will do this one recipe at a time. Later, we'll learn how to do it much more efficiently.
 
 If still not convinced with my basic analogy the best place to read about this is - [Jay Alammar](https://jalammar.github.io/illustrated-transformer/)
 
@@ -125,3 +125,7 @@ def basic_attention_kernel(
     o_ptrs = Output_ptr + query_idx * d_model + dim_offsets
     tl.store(o_ptrs, output, mask=dim_mask)
 ```
+Perfect Code Hopefully helps. Now let's break it :-
+First Question that came to my mind when I started reading and learning how to implement attention was -  Why Only one `program_id` ?
+
+But before I answer - Pop Quiz: If we have 1000 queries to process, how many programs should we launch? 🤔
