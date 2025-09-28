@@ -100,7 +100,7 @@ def basic_attention_kernel(
     max_score = tl.max(scores, axis=0)
     attn_weights = tl.exp(scores - max_score)
     attn_weights = tl.where(seq_mask, attn_weights, 0.0)
-    attn_weights /= tl.sum(attn_weights, axis=0)
+    attn_weights = attn_weights/tl.sum(attn_weights, axis=0)
 
     # --- 5. GATHER THE INGREDIENTS (COMPUTE OUTPUT) ---
     # This is our SECOND inefficient tour of the warehouse!
