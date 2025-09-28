@@ -204,7 +204,7 @@ Out Each program loads <span style="color: #9ACD32; font-weight: bold;">2000x</s
 
 Our chef's  reading the entire cookbook for every single dish - technically it works, but it's wildly inefficient.
 
-## "Putting It All Together in a Python Wrapper"
+## Putting It All Together in a Python Wrapper
 
 ```python
 def basic_attention(Q, K, V, scale=None):
