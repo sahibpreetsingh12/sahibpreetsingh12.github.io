@@ -145,7 +145,7 @@ program_id(0)  # Each sequence (in simple words each token) gets ID: 0, 1, 2, ..
 ```
 
 But Question is still 
-<span style="color: #9ACD32; font-weight: bold;">>Why not program_id(1) or 2D grid?</span> Because attention is fundamentally a row-wise operation:
+<span style="color: #9ACD32; font-weight: bold;">Why not program_id(1) or 2D grid?</span> Because attention is fundamentally a row-wise operation:
 
 *And when we say row-wise it means each query(in simple terms think each query as each word in sentence) needs to see which parts of the sentence they will pay attention too, and not bother about what other queries will be doing.*
 
@@ -172,7 +172,7 @@ q_ptrs = Q_ptr + query_idx * d_model + dim_offsets
 #      = Q_ptr + 2 * 512 + [0,1,2,3,4,5,6,... BLOCK_SIZE_DIM]
 #      = Q_ptr + [1024,1025,1026,1027,1028,1029,1030,1031]
 ```
-1. And the Answer is yes we are following since all the addresses are consecutive.
+1. And the Answer is <span style="color: #9ACD32; font-weight: bold;">yes</span> we are following since all the addresses are consecutive.
 
 2. All 32 threads in a warp will be able access nearby memory locations
 
