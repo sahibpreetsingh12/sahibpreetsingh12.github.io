@@ -16,7 +16,9 @@ Now, it's time to tackle the Everest of modern AI: the attention mechanism. Our 
 Our goal is to translate the abstract math of `softmax(QKᵀ/√d)V` into a real, working GPU kernel, line by line how normally we would in python and then in later blogs we will learn what and why different methods like `tiling` and `vectorised loading`, `online` algorithms make a lot of sense.
 
 ### <span style="color: #3256cdff; font-weight: bold;">A 60-Second Refresher on Attention</span>
-Before we write the code, we need a quick mental model. The classic "Query, Key, Value" explanation always felt sterile to me. What does that *mean* when you're staring at memory pointers?
+![cooking-analogy]({{ site.baseurl }}/assets/blog-3-simple-attention/cooking.png)
+
+Before we write the code, we need a quick mental model.
 Let's go with basic analogy of quick receipe builder.
 
 Imagine you want to create a new flavor (the Output).
