@@ -16,7 +16,9 @@ Now, it's time to tackle the Everest of modern AI: the attention mechanism. Our 
 Our goal is to translate the abstract math of `softmax(QKᵀ/√d)V` into a real, working GPU kernel, line by line how normally we would in python and then in later blogs we will learn what and why different methods like `tiling` and `vectorised loading`, `online` algorithms make a lot of sense.
 
 ### <span style="color: #3256cdff; font-weight: bold;">A 60-Second Refresher on Attention</span>
-![cooking-analogy]({{ site.baseurl }}/assets/blog-3-simple-attention/cooking.png)
+<div align="center">
+  <img src="{{ site.baseurl }}/assets/blog-3-simple-attention/cooking.png" alt="cooking-analogy" style="max-width: 100%; height: auto;">
+</div>
 
 Before we write the code, we need a quick mental model.
 Let's go with basic analogy of quick receipe builder.
@@ -35,7 +37,7 @@ Our kernel's(again saying it's Just like a FUNCTION in python) job is to perform
 
 -  <span style="color: #9ACD32; font-weight: bold;">Step 3</span>: Mix the Ingredients. It then takes the actual spices (Values) from inside those jars according to the recipe and mixes them together to create your final, complex flavor (Output).
 
-From the GPU's perspective, we're just building <span style="color: #3256cdff; font-weight: bold;">millions of tiny, unique recipes in parallel</span>. Our "slow" kernel today will do this one recipe at a time. Later, we'll learn how to do it much more efficiently.
+From the GPU's perspective, we're just building <span style="color: #3256cdff; font-weight: bold; font-size: 1.2em;">millions of tiny, unique recipes in parallel</span>. Our "slow" kernel today will do this one recipe at a time. Later, we'll learn how to do it much more efficiently.
 
 If still not convinced with my basic analogy the best place to read about this is - [Jay Alammar](https://jalammar.github.io/illustrated-transformer/)
 
