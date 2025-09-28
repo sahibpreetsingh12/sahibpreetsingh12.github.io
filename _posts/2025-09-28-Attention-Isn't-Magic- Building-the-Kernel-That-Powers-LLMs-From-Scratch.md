@@ -96,6 +96,8 @@ def basic_attention_kernel(
     # Now that we've seen all the items, we convert our comparison scores
     # into a final recipe (the attention weights). e.g., "75% item A, 25% item B".
     seq_mask = tl.arange(0, BLOCK_SIZE_SEQ) < seq_len
+
+    #this float('inf) jsut makes sure that items that are padded to 0 to make them so small that we don't use them
     scores = tl.where(seq_mask, scores, -float('inf'))
     max_score = tl.max(scores, axis=0)
     attn_weights = tl.exp(scores - max_score)
