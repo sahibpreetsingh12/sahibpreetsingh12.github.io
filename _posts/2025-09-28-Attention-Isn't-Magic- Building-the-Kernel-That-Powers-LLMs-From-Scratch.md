@@ -70,6 +70,7 @@ def basic_attention_kernel(
     dim_mask = dim_offsets < d_model
     # Find the memory address for our specific order's instruction sheet.
     q_ptrs = Q_ptr + query_idx * d_model + dim_offsets
+
     # Load the instruction sheet.
     query = tl.load(q_ptrs, mask=dim_mask, other=0.0)
 
@@ -141,4 +142,71 @@ grid = (seq_len,)  # If seq_len = 1000, we get 1000 programs
 program_id(0)  # Each sequence (in simple words each token) gets ID: 0, 1, 2, ..., 999
 ```
 
-But Question was <span style="font-size: 1.1em; font-weight: bold">Why not program_id(1) or 2D grid?</span> Because attention is fundamentally a row-wise operation:
+But Question is still 
+<span style="font-size: 1.1em; font-weight: bold">Why not program_id(1) or 2D grid?</span> Because attention is fundamentally a row-wise operation:
+
+And when we say row-wise it means each query(in simple terms think each query as each word in sentence) needs to see which parts of the sentence they will pay attention too, and not bother about what other queries will be doing.
+
+
+Now in our kitchen and chef analogy think of it like a restaurant kitchen where:
+
+•  Each program = One chef 👨‍🍳
+
+•  Each query = One customer's order
+
+•  The rule: Each chef handles ONE complete order from start to finish
+
+In Last Blog we covered Memory Coalescing [here](https://sahibpreetsingh12.github.io/posts/the-first-rule-of-fast-triton-kernels-coalesce-your-memory-access/) we will check are following that principle? 
+
+```python
+query_idx = tl.program_id(0)  # I'm chef #2, handling order #2
+
+# Step 1: Load my customer's order (query vector)
+dim_offsets = tl.arange(0, BLOCK_SIZE_DIM)  # [0,1,2,3,4,5,6,... BLOCK_SIZE_DIM]
+
+dim_mask = dim_offsets < d_model # this is just a check of that we don't accidently cross our boundary - we're preventing the chef from accidentally using padding (empty slots) instead of real data dimensions.
+
+q_ptrs = Q_ptr + query_idx * d_model + dim_offsets
+#      = Q_ptr + 2 * 512 + [0,1,2,3,4,5,6,... BLOCK_SIZE_DIM]
+#      = Q_ptr + [1024,1025,1026,1027,1028,1029,1030,1031]
+```
+1. And the Answer is yes we are following since all the addresses are consecutive.
+
+2. All 32 threads in a warp will be able access nearby memory locations
+
+## Now the next piece is <span style="font-size: 1.3em; font-weight: bold; color: #ff6b35;">Nightmare</span> from GPU perspective :
+
+```python
+# Problem #1: Sequential key loading
+for k_idx in range(seq_len):  # For EVERY key in sequence
+    k_ptrs = K_ptr + k_idx * d_model + dim_offsets
+    key = tl.load(k_ptrs, mask=dim_mask, other=0.0)  # Load one key
+    score = tl.sum(query * key) * scale
+
+# Problem #2: Sequential value loading  
+for v_idx in range(seq_len):  # For EVERY value in sequence
+    v_ptrs = V_ptr + v_idx * d_model + dim_offsets
+    value = tl.load(v_ptrs, mask=dim_mask, other=0.0)  # Load one value
+```
+
+We learned in last blog problem with GPU is not the algorithm it's the time GPU sit IDLE waiting for data and the for loop above just does that (but we will ignore it for this blog) since the goal is to just understand how attention works.
+
+The Restaurant Analogy:
+- Chef #2 needs to check every ingredient in the pantry (all keys)
+
+- Then make another trip to collect ingredients (all values)  
+
+- Each trip is efficient (coalesced), but we make 2 × seq_len trips total!
+
+Now to practically see how inefficient these numbers are let's take seq_len=1024, d_model=512
+
+```python
+Query loads:    1 × 512 = 512 elements
+Key loads:      1024 × 512 = 524,288 elements  
+Value loads:    1024 × 512 = 524,288 elements
+Total:          1,048,888 elements loaded per query
+```
+
+Out Each program loads <span style="color: #9ACD32; font-weight: bold;">2000x</span> more data than it needs for the query itself! 
+
+That's like a chef reading the entire cookbook for every single dish - technically it works, but it's wildly inefficient.
