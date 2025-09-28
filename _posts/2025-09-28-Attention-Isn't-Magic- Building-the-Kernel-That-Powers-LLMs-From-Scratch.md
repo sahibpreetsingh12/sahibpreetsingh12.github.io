@@ -49,6 +49,8 @@ Recommended - Use Colab with T4 GPU that's enough for today's blog.
 
 ```python
 import triton
+import math
+import torch
 import triton.language as tl
 
 @triton.jit
@@ -58,73 +60,60 @@ def basic_attention_kernel(
     BLOCK_SIZE_SEQ: tl.constexpr,
     BLOCK_SIZE_DIM: tl.constexpr
 ):
-    # --- 1. GET OUR ASSIGNMENT ---
-    # Each team of workers (program) is responsible for ONE order (query).
-    # Which order is my team working on today?
+    # 1. getting the query
+    # Each chef (program) handles exactly ONE customer's order (query)
     query_idx = tl.program_id(0)
 
-    # --- 2. GET THE ORDER DETAILS (LOAD QUERY) ---
-    # We need to grab the full instruction sheet for our order (the query vector).
-    # This instruction sheet will stay on our workbench (SRAM) for the whole process.
+    # 2. Load Query
+    # Load our customer's complete taste profile and keep it on our workbench
     dim_offsets = tl.arange(0, BLOCK_SIZE_DIM)
-    dim_mask = dim_offsets < d_model
-    # Find the memory address for our specific order's instruction sheet.
+    dim_mask = dim_offsets < d_model  # Don't use empty spice jars - only real ingredients!
     q_ptrs = Q_ptr + query_idx * d_model + dim_offsets
-
-    # Load the instruction sheet.
     query = tl.load(q_ptrs, mask=dim_mask, other=0.0)
 
-    # --- 3. COMPARE OUR ORDER TO EVERY ITEM IN THE WAREHOUSE (COMPUTE SCORES) ---
-    # This is the slow, brute-force part of our job today.
-    # To find out which items match our order, our worker must walk down EVERY aisle.
+    # Compute Score
+    # Initialize our score clipboard - start with "impossible" scores for unused slots
     scores = tl.full([BLOCK_SIZE_SEQ], value=-float('inf'), dtype=tl.float32)
 
-    # This 'for' loop is our worker walking through the warehouse, one shelf at a time.
+    # Walk through every spice jar in the warehouse, one at a time (inefficient!)
     for k_idx in range(seq_len):
         if k_idx < BLOCK_SIZE_SEQ:
-            # Go to a shelf and load the label of an item (a key vector).
+            # Read the label on this spice jar (key vector)
             k_ptrs = K_ptr + k_idx * d_model + dim_offsets
             key = tl.load(k_ptrs, mask=dim_mask, other=0.0)
 
-            # Compare the item's label (key) to our order instructions (query).
+            # How well does this spice match our customer's taste?
             score = tl.sum(query * key) * scale
 
-            # Write down the comparison score on our clipboard.
+            # Write the score on our clipboard at the right position
             scores = tl.where(tl.arange(0, BLOCK_SIZE_SEQ) == k_idx, score, scores)
 
-    # --- 4. CREATE THE FINAL RECIPE (APPLY SOFTMAX) ---
-    # Now that we've seen all the items, we convert our comparison scores
-    # into a final recipe (the attention weights). e.g., "75% item A, 25% item B".
+    #4. Softmax
+    # Turn raw scores into proper percentages that sum to 100%
     seq_mask = tl.arange(0, BLOCK_SIZE_SEQ) < seq_len
+    scores = tl.where(seq_mask, scores, -float('inf'))  # Cross out unused recipe slots
+    max_score = tl.max(scores, axis=0)                  # Find highest score (numerical stability)
+    attn_weights = tl.exp(scores - max_score)           # Convert to positive weights
+    attn_weights = tl.where(seq_mask, attn_weights, 0.0)  # Zero out unused slots
+    attn_weights = attn_weights / tl.sum(attn_weights, axis=0)  # Normalize to 100%
 
-    #this float('inf) jsut makes sure that items that are padded to 0 to make them so small that we don't use them
-    scores = tl.where(seq_mask, scores, -float('inf'))
-    max_score = tl.max(scores, axis=0)
-    attn_weights = tl.exp(scores - max_score)
-    attn_weights = tl.where(seq_mask, attn_weights, 0.0)
-    attn_weights = attn_weights/tl.sum(attn_weights, axis=0)
-
-    # --- 5. GATHER THE INGREDIENTS (COMPUTE OUTPUT) ---
-    # This is our SECOND inefficient tour of the warehouse!
-    # With recipe in hand, our worker must now go BACK to the shelves to get the actual items.
+    
     output = tl.zeros([BLOCK_SIZE_DIM], dtype=tl.float32)
 
-    # Another slow 'for' loop...
     for v_idx in range(seq_len):
         if v_idx < BLOCK_SIZE_SEQ:
-            # Go back to a shelf and get the actual contents of the box (a value vector).
+            # Get the actual value vector
             v_ptrs = V_ptr + v_idx * d_model + dim_offsets
             value = tl.load(v_ptrs, mask=dim_mask, other=0.0)
 
-            # Check our recipe for how much of this item to grab.
+            
             weight = tl.sum(tl.where(tl.arange(0, BLOCK_SIZE_SEQ) == v_idx, attn_weights, 0.0))
             
-            # Add the ingredient to our final package.
+            
             output += weight * value
 
-    # --- 6. SHIP THE FINAL PACKAGE (STORE RESULT) ---
-    # Our final, blended product (the output vector) is ready.
-    # Place it on the shipping dock (store it in output memory).
+    # 5. storing the results 
+    
     o_ptrs = Output_ptr + query_idx * d_model + dim_offsets
     tl.store(o_ptrs, output, mask=dim_mask)
 ```
@@ -214,3 +203,106 @@ Total:          1,048,888 elements loaded per query
 Out Each program loads <span style="color: #9ACD32; font-weight: bold;">2000x</span> more data than it needs for the query itself! 
 
 Our chef's  reading the entire cookbook for every single dish - technically it works, but it's wildly inefficient.
+
+## "Putting It All Together in a Python Wrapper"
+
+```python
+def basic_attention(Q, K, V, scale=None):
+    """
+    Our simple attention implementation - one chef per customer!
+    
+    Args:
+        Q: Query matrix [seq_len, d_model] - customer taste profiles
+        K: Key matrix [seq_len, d_model] - spice jar labels  
+        V: Value matrix [seq_len, d_model] - actual spices
+        scale: Optional scaling factor (default: 1/√d_model)
+    
+    Returns:
+        Output matrix [seq_len, d_model] - custom flavor blends
+    """
+    # Basic setup and validation
+    seq_len, d_model = Q.shape
+    assert K.shape == (seq_len, d_model), f"K shape mismatch: {K.shape}"
+    assert V.shape == (seq_len, d_model), f"V shape mismatch: {V.shape}"
+    assert Q.is_cuda and K.is_cuda and V.is_cuda, "All tensors must be on GPU"
+    
+    # Default scaling (the √d_model part of the attention formula)
+    if scale is None:
+        scale = 1.0 / math.sqrt(d_model)
+    
+    # Allocate output - same size as queries
+    output = torch.empty_like(Q, dtype=torch.float32)
+    
+    # Choose block sizes (must be powers of 2!)
+    BLOCK_SIZE_DIM = triton.next_power_of_2(d_model)  # Fit all dimensions
+    BLOCK_SIZE_SEQ = triton.next_power_of_2(seq_len)  # Fit all sequence positions
+    
+    # Launch one program per query (one chef per customer)
+    grid = (seq_len,)  # 1D grid: [Program 0, Program 1, Program 2, ...]
+    
+    # Send our chefs to work!
+    basic_attention_kernel[grid](
+        Q, K, V, output,
+        seq_len, d_model, scale,
+        BLOCK_SIZE_SEQ=BLOCK_SIZE_SEQ,
+        BLOCK_SIZE_DIM=BLOCK_SIZE_DIM
+    )
+    
+    return output
+
+# Helper function for easy testing
+def create_test_data(seq_len=8, d_model=64, device='cuda'):
+    """Create small test matrices for our attention kernel"""
+    torch.manual_seed(42)  # Reproducible results
+    Q = torch.randn(seq_len, d_model, device=device, dtype=torch.float32)
+    K = torch.randn(seq_len, d_model, device=device, dtype=torch.float32) 
+    V = torch.randn(seq_len, d_model, device=device, dtype=torch.float32)
+    return Q, K, V
+
+
+def test_attention_correctness():
+    """
+    The ultimate test: does our kernel produce the same results as PyTorch?
+    """
+    print("🧪 Testing our attention kernel...")
+    
+    # Start small - easier to debug if something goes wrong
+    seq_len, d_model = 8, 64
+    Q, K, V = create_test_data(seq_len, d_model)
+    
+    # Our attention kernel
+    our_output = basic_attention(Q, K, V)
+    
+    # PyTorch's  implementation
+    pytorch_output = torch.nn.functional.scaled_dot_product_attention(
+        Q.unsqueeze(0).unsqueeze(0),  # Add batch and head dims
+        K.unsqueeze(0).unsqueeze(0), 
+        V.unsqueeze(0).unsqueeze(0)
+    ).squeeze()  # Remove extra dims
+    
+
+    max_diff = torch.max(torch.abs(our_output - pytorch_output)).item()
+    matches = torch.allclose(our_output, pytorch_output, rtol=1e-4, atol=1e-4)
+    
+    print(f"✅ Results match PyTorch: {matches}")
+    print(f"📊 Maximum difference: {max_diff:.2e}")
+    
+    if matches:
+        print("🎉 SUCCESS! Our kernel produces correct results!")
+    else:
+        print("❌ Something's wrong - time to debug...")
+    
+    return matches
+
+# Test it out!
+test_attention_correctness()
+```
+Perfect You will be able to run your first kernel.
+
+Now Let's benchmark and see how **fast or slow** we are compared to [Pytorch](https://pytorch.org/).
+and To keep the blog easy to read and length appropriate check the full code [here](https://github.com/sahibpreetsingh12/triton-learning/tree/main/triton-attention-series/01_basic_attention)
+
+but results I got are 
+<div align="center">
+  <img src="{{ site.baseurl }}/assets/blog-3-simple-attention/co.png" alt="cooking-analogy" style="max-width: 100%; height: auto;">
+</div>
