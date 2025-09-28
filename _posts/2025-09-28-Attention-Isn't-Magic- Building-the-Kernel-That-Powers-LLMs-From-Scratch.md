@@ -143,9 +143,9 @@ program_id(0)  # Each sequence (in simple words each token) gets ID: 0, 1, 2, ..
 ```
 
 But Question is still 
-<span style="font-size: 1.1em; font-weight: bold">Why not program_id(1) or 2D grid?</span> Because attention is fundamentally a row-wise operation:
+<span style="color: #9ACD32; font-weight: bold;">>Why not program_id(1) or 2D grid?</span> Because attention is fundamentally a row-wise operation:
 
-And when we say row-wise it means each query(in simple terms think each query as each word in sentence) needs to see which parts of the sentence they will pay attention too, and not bother about what other queries will be doing.
+*And when we say row-wise it means each query(in simple terms think each query as each word in sentence) needs to see which parts of the sentence they will pay attention too, and not bother about what other queries will be doing.*
 
 
 Now in our kitchen and chef analogy think of it like a restaurant kitchen where:
@@ -156,7 +156,7 @@ Now in our kitchen and chef analogy think of it like a restaurant kitchen where:
 
 •  The rule: Each chef handles ONE complete order from start to finish
 
-In Last Blog we covered Memory Coalescing [here](https://sahibpreetsingh12.github.io/posts/the-first-rule-of-fast-triton-kernels-coalesce-your-memory-access/) we will check are following that principle? 
+In Last Blog we covered Memory Coalescing [here](https://sahibpreetsingh12.github.io/posts/the-first-rule-of-fast-triton-kernels-coalesce-your-memory-access/) but we will now check are we following that principle? 
 
 ```python
 query_idx = tl.program_id(0)  # I'm chef #2, handling order #2
