@@ -248,6 +248,76 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
             flex: 1;
         }
 
+        /* Contact Section */
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+            margin-top: 2rem;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .contact-card {
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .contact-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow);
+            border-color: var(--accent-color);
+        }
+
+        .contact-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .contact-card h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-color);
+        }
+
+        .contact-item {
+            margin-bottom: 1.25rem;
+            text-align: left;
+        }
+
+        .contact-item .label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .contact-link {
+            display: inline-block;
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 1.05rem;
+            font-weight: 500;
+            padding: 0.5rem 0;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+
+        .contact-link:hover {
+            color: #8b5cf6;
+            border-bottom-color: #8b5cf6;
+            transform: translateX(3px);
+        }
+
         /* Posts Section */
         .posts-grid {
             display: grid;
@@ -854,19 +924,33 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
     <section class="section">
         <div class="container">
             <h2><i class="fas fa-handshake"></i> Let's Connect</h2>
-            <p>Always up for a chat about scaling GenAI systems, LLM evaluation frameworks, production ML challenges, and the latest research.</p>
+            <p style="font-size: 1.1rem; margin-bottom: 2.5rem;">Always up for a chat about scaling GenAI systems, LLM evaluation frameworks, production ML challenges, and the latest research.</p>
             
-            <div class="cards">
-                <div class="card">
-                    <h3>💼 Professional</h3>
-                    <p><strong>Email:</strong> ss9334931@gmail.com</p>
-                    <p><strong>LinkedIn:</strong> <a href="https://www.linkedin.com/in/sahibpreetsinghh/" target="_blank">@sahibpreetsinghh</a></p>
+            <div class="contact-grid">
+                <div class="contact-card">
+                    <div class="contact-icon">💼</div>
+                    <h3>Professional</h3>
+                    <div class="contact-item">
+                        <span class="label">Email</span>
+                        <a href="mailto:ss9334931@gmail.com" class="contact-link">ss9334931@gmail.com</a>
+                    </div>
+                    <div class="contact-item">
+                        <span class="label">LinkedIn</span>
+                        <a href="https://www.linkedin.com/in/sahibpreetsinghh/" target="_blank" class="contact-link">sahibpreetsinghh</a>
+                    </div>
                 </div>
                 
-                <div class="card">
-                    <h3>🔧 Development</h3>
-                    <p><strong>GitHub:</strong> <a href="https://github.com/sahibpreetsingh12" target="_blank">@sahibpreetsingh12</a></p>
-                    <p><strong>Kaggle:</strong> <a href="https://www.kaggle.com/sahib12" target="_blank">@sahib12</a></p>
+                <div class="contact-card">
+                    <div class="contact-icon">🔧</div>
+                    <h3>Development</h3>
+                    <div class="contact-item">
+                        <span class="label">GitHub</span>
+                        <a href="https://github.com/sahibpreetsingh12" target="_blank" class="contact-link">sahibpreetsingh12</a>
+                    </div>
+                    <div class="contact-item">
+                        <span class="label">Kaggle</span>
+                        <a href="https://www.kaggle.com/sahib12" target="_blank" class="contact-link">sahib12</a>
+                    </div>
                 </div>
             </div>
         </div>
