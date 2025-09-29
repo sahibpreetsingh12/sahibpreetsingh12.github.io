@@ -191,10 +191,36 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
         /* Cards */
         .cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 2rem;
             margin-top: 2rem;
             align-items: stretch;
+        }
+        
+        /* Better layout for 3-card sections on larger screens */
+        @media (min-width: 1200px) {
+            .cards {
+                grid-template-columns: repeat(3, 1fr);
+                max-width: 1400px;
+                margin-left: auto;
+                margin-right: auto;
+                gap: 2.5rem;
+            }
+        }
+        
+        /* 2-column layout for medium screens */
+        @media (min-width: 900px) and (max-width: 1199px) {
+            .cards {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 2.5rem;
+            }
+        }
+        
+        /* Ensure cards maintain consistent height */
+        @media (min-width: 900px) {
+            .elite-card {
+                min-height: 420px;
+            }
         }
 
         .card {
@@ -581,11 +607,6 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
             }
         }
 
-        @media (max-width: 1200px) {
-            .cards {
-                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            }
-        }
     </style>
 </head>
 <body>
