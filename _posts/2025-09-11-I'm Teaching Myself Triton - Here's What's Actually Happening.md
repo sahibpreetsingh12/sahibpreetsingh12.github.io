@@ -3,11 +3,12 @@ layout: post
 title: "I'm Teaching Myself Triton - Here's What's Actually Happening"
 date: 2025-09-12
 description: "Part-1 Describes how I got started with triton, why you should and How to get started"
+category: Triton
 tags: [Nvidia, Triton, GPU Programming]
 author: Sahibpreet Singh
 pinned: true
+published: true
 ---
-## My Journey: From Fear to Understanding
 
 Starting from the beginning, July 2025 - super scared and tense. I was doing everything left, right, and center to secure a job. In the middle of all this, I felt super helpless, and during that time I got the idea to teach myself something I always feared: GPU programming. Yes, actually understanding how GPUs work at a deeper level, not just slapping `.cuda()` on everything and calling it done.
 

@@ -9,30 +9,22 @@ permalink: /posts/
     <h1><i class="fas fa-blog"></i> All Posts</h1>
     <p>Every post from my journey in GenAI, LLMs, and production ML systems — all in one place.</p>
 
-    <!-- Categories Section -->
-    <div class="categories-section">
-      <h2><i class="fas fa-folder-open"></i> Browse by Category</h2>
-      <div id="categories-grid" class="categories-grid">
-        <!-- Category cards will be populated by JavaScript -->
-      </div>
-    </div>
-
-    <!-- Sorting Controls -->
+    <!-- Simple Category Filter -->
     <div class="posts-controls">
+      <div class="filter-controls">
+        <label for="category-select">Browse by Category:</label>
+        <select id="category-select" class="category-dropdown">
+          <option value="all">All Posts</option>
+          <!-- Categories populated from your posts -->
+        </select>
+      </div>
+      
       <div class="sort-controls">
         <label for="sort-select">Sort by:</label>
         <select id="sort-select" class="sort-dropdown">
           <option value="date-desc">Newest First</option>
           <option value="date-asc">Oldest First</option>
-          <option value="title-asc">Title A-Z</option>
-          <option value="title-desc">Title Z-A</option>
         </select>
-      </div>
-      
-      <div class="filter-controls">
-        <label>Active Filter:</label>
-        <span id="active-category" class="active-filter">All Posts</span>
-        <button id="clear-filter" class="clear-btn" style="display: none;">Clear</button>
       </div>
     </div>
 
@@ -53,114 +45,6 @@ permalink: /posts/
 </section>
 
 <style>
-  /* Categories Section */
-  .categories-section {
-    margin-bottom: 3rem;
-  }
-
-  .categories-section h2 {
-    font-size: 1.8rem;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .categories-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-  }
-
-  .category-card {
-    background: linear-gradient(135deg, var(--card-bg), var(--border-color));
-    border: 2px solid var(--border-color);
-    border-radius: 12px;
-    padding: 2rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .category-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--accent-color), #8b5cf6);
-    transform: scaleX(0);
-    transition: transform 0.3s ease;
-  }
-
-  .category-card:hover::before {
-    transform: scaleX(1);
-  }
-
-  .category-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow);
-    border-color: var(--accent-color);
-  }
-
-  .category-card.active {
-    border-color: var(--accent-color);
-    background: linear-gradient(135deg, var(--accent-color), #8b5cf6);
-    color: white;
-  }
-
-  .category-card.active::before {
-    transform: scaleX(1);
-  }
-
-  .category-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    opacity: 0.9;
-  }
-
-  .category-name {
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-  }
-
-  .category-count {
-    font-size: 0.9rem;
-    opacity: 0.8;
-  }
-
-  .active-filter {
-    background: var(--accent-color);
-    color: white;
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-weight: 500;
-    font-size: 0.9rem;
-  }
-
-  .clear-btn {
-    background: none;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 6px 12px;
-    color: var(--text-color);
-    cursor: pointer;
-    font-size: 0.85rem;
-    margin-left: 0.5rem;
-    transition: all 0.3s ease;
-  }
-
-  .clear-btn:hover {
-    background: var(--accent-color);
-    color: white;
-    border-color: var(--accent-color);
-  }
-
   .posts-controls {
     display: flex;
     justify-content: space-between;
@@ -178,6 +62,17 @@ permalink: /posts/
     display: flex;
     align-items: center;
     gap: 0.5rem;
+  }
+
+  .category-dropdown {
+    padding: 10px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 1rem;
+    min-width: 200px;
+    font-weight: 500;
   }
 
   .sort-dropdown, .filter-dropdown {
@@ -256,21 +151,7 @@ permalink: /posts/
 </style>
 
 <script>
-  // Category definitions with icons/emojis
-  const categoryConfig = {
-    'Triton': { icon: '⚡', color: '#3b82f6' },
-    'GPU Programming': { icon: '🎮', color: '#8b5cf6' },
-    'Nvidia': { icon: '🟢', color: '#76b900' },
-    'Attention': { icon: '🎯', color: '#ef4444' },
-    'Performance': { icon: '🚀', color: '#f59e0b' },
-    'GPU': { icon: '💻', color: '#8b5cf6' },
-    'LLM': { icon: '🧠', color: '#06b6d4' },
-    'AI': { icon: '🤖', color: '#ec4899' }
-  };
-
-  let activeCategory = 'all';
-
-  // Post data - in a real Jekyll site, this would be generated from site.posts
+  // Post data from Jekyll
   const allPosts = [
     {% for post in site.posts %}
     {
@@ -279,6 +160,7 @@ permalink: /posts/
       dateFormatted: "{{ post.date | date: '%B %d, %Y' }}",
       url: "{{ post.url | relative_url }}",
       description: {{ post.description | default: post.excerpt | strip_html | jsonify }},
+      category: {{ post.category | default: "Uncategorized" | jsonify }},
       tags: {{ post.tags | jsonify }},
       pinned: {{ post.pinned | default: false }}
     }{% unless forloop.last %},{% endunless %}
@@ -308,67 +190,22 @@ permalink: /posts/
     }
   }
 
+  // Populate category dropdown
+  function populateCategoryDropdown() {
+    const categories = [...new Set(allPosts.map(post => post.category))].sort();
+    const dropdown = document.getElementById('category-select');
+    
+    categories.forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat;
+      option.textContent = cat;
+      dropdown.appendChild(option);
+    });
+  }
+
   function filterPosts(posts, category) {
     if (category === 'all') return posts;
-    return posts.filter(post => post.tags.some(tag => tag === category));
-  }
-
-  function renderCategories() {
-    // Get all unique categories from posts
-    const allTags = [...new Set(allPosts.flatMap(post => post.tags))].sort();
-    
-    // Count posts per category
-    const categoryCounts = {};
-    allTags.forEach(tag => {
-      categoryCounts[tag] = allPosts.filter(post => post.tags.includes(tag)).length;
-    });
-
-    // Create category cards
-    const categoriesGrid = document.getElementById('categories-grid');
-    
-    // "All Posts" card
-    let html = `
-      <div class="category-card ${activeCategory === 'all' ? 'active' : ''}" onclick="selectCategory('all')">
-        <div class="category-icon">📚</div>
-        <div class="category-name">All Posts</div>
-        <div class="category-count">${allPosts.length} articles</div>
-      </div>
-    `;
-
-    // Individual category cards
-    allTags.forEach(tag => {
-      const config = categoryConfig[tag] || { icon: '📁', color: '#6b7280' };
-      const isActive = activeCategory === tag;
-      
-      html += `
-        <div class="category-card ${isActive ? 'active' : ''}" onclick="selectCategory('${tag}')">
-          <div class="category-icon">${config.icon}</div>
-          <div class="category-name">${tag}</div>
-          <div class="category-count">${categoryCounts[tag]} article${categoryCounts[tag] > 1 ? 's' : ''}</div>
-        </div>
-      `;
-    });
-
-    categoriesGrid.innerHTML = html;
-  }
-
-  function selectCategory(category) {
-    activeCategory = category;
-    
-    // Update active category display
-    const activeEl = document.getElementById('active-category');
-    const clearBtn = document.getElementById('clear-filter');
-    
-    if (category === 'all') {
-      activeEl.textContent = 'All Posts';
-      clearBtn.style.display = 'none';
-    } else {
-      activeEl.textContent = category;
-      clearBtn.style.display = 'inline-block';
-    }
-
-    renderCategories();
-    renderPosts();
+    return posts.filter(post => post.category === category);
   }
 
   function createPostCard(post, isPinned = false) {
@@ -386,6 +223,7 @@ permalink: /posts/
 
   function renderPosts() {
     const sortBy = document.getElementById('sort-select').value;
+    const categoryFilter = document.getElementById('category-select').value;
     
     // Separate pinned and regular posts (limit pins to 3)
     let pinnedPosts = allPosts.filter(post => post.pinned);
@@ -397,7 +235,7 @@ permalink: /posts/
     const regularPosts = allPosts.filter(post => !post.pinned);
     
     // Apply category filter and sorting
-    const filteredRegular = filterPosts(regularPosts, activeCategory);
+    const filteredRegular = filterPosts(regularPosts, categoryFilter);
     const sortedRegular = sortPosts(filteredRegular, sortBy);
     
     // Render pinned posts
@@ -435,11 +273,11 @@ permalink: /posts/
 
   // Initialize the page
   document.addEventListener('DOMContentLoaded', function() {
-    renderCategories();
+    populateCategoryDropdown();
     renderPosts();
     
     // Add event listeners
+    document.getElementById('category-select').addEventListener('change', renderPosts);
     document.getElementById('sort-select').addEventListener('change', renderPosts);
-    document.getElementById('clear-filter').addEventListener('click', () => selectCategory('all'));
   });
 </script>
