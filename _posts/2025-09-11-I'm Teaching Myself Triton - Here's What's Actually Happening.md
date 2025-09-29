@@ -6,7 +6,7 @@ description: "Part-1 Describes how I got started with triton, why you should and
 category: Triton
 tags: [Nvidia, Triton, GPU Programming]
 author: Sahibpreet Singh
-pinned: true
+pinned: false
 published: true
 ---
 

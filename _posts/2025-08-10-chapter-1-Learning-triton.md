@@ -5,7 +5,8 @@ date: 2025-08-10
 description: "What is Triton, How to get started and Why I started?"
 tags: ["llm Inference","Triton" , "Inference optimization"]
 author: Sahibpreet Singh
-published: false
+published: true
+category : BERT
 ---
 ## Learning Triton from Scratch: Chapter 1 - Diving into the World of Parallel Computing
 

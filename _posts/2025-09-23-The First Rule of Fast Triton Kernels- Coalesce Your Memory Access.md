@@ -6,7 +6,7 @@ description: "Part-2 The First Rule of Fast Triton Kernels: Coalesce Your Memory
 category: Triton
 tags: [Triton, Nvidia, GPU Programming]
 author: Sahibpreet Singh
-pinned: true
+pinned: false
 published: true
 ---
 
