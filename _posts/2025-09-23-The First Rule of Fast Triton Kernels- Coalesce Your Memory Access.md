@@ -29,7 +29,7 @@ Let me put that in perspective:
 - **The Math**: That's roughly a **82:1 mismatch!**
 
 This means your $1,600 GPU spends **98% of its time waiting** for data to arrive from memory. 
-So, Even if you upgrade to the flagship H100 ($30k), the ratio gets `*worse* - 590:1`! More horsepower, same traffic jam.
+So, Even if you upgrade to the flagship H100 ($30k), the ratio gets `worse - 590:1`! More horsepower, same traffic jam.
 
 Simple Solution ( We will dive deeper ahead ) - Keep Things In order so that our beloved GPU does not spends lot of time picking things (Data Points).
 
@@ -279,18 +279,17 @@ Mastering this principle is the difference between code that **runs** and code t
 
 ### Key Takeaways: The TL;DR for Fast GPUs
 
-•  The Real Bottleneck: It's not the math, it's the memory waiting game. Your GPU is a Ferrari engine stuck in traffic.
+•  <span style="color: #cd5132ff; font-weight: bold;">The Real Bottleneck</span>: It's not the math, it's the memory waiting game. Your GPU is a Ferrari engine stuck in traffic.
 
-•  The Warp Squad 👨‍👩‍👧‍👦: Threads are a team of 32 chained together. If one waits, they all wait.
+•  <span style="color: #9ACD32; font-weight: bold;">The Warp Squad</span>: Threads are a team of 32 chained together. If one waits, they all wait.
 
-•  The Golden Rule ✨: Keep your warp squad happy by making them pick up consecutive parcels (contiguous memory).
+•  <span style="color: #edd775ff; font-weight: bold;">The Golden Rule ✨</span>: Keep your warp squad happy by making them pick up consecutive parcels (contiguous memory).
 
-•  Coalesced vs. Scattered ⚡: One efficient trip vs. 32 chaotic trips. The difference? A 5x-10x speedup from a single line of code!
+•  <span style="color: #9ACD32; font-weight: bold;">Coalesced vs. Scattered ⚡</span>: One efficient trip vs. 32 chaotic trips. The difference? A 5x-10x speedup from a single line of code!
 
-•  Triton's Magic Wand 🪄: The `tl.arange` pattern isn't just common, it's a direct instruction to your GPU to "go fast and coalesce!"
+•  <span style="color: #9ACD32; font-weight: bold;">Triton's Magic Wand 🪄</span>: The `tl.arange` pattern isn't just common, it's a direct instruction to your GPU to "go fast and coalesce!"
 
-### **Next Time... Tiling!**
+### **Next Time...**
 
-Now that you understand coalescing, the next logical step is **tiling** - the strategy we use to apply this concept to bigger problems like matrix multiplication.
-
-Stay tuned as we break down how to optimize large-scale operations in Triton!
+Now that you understand coalescing,the next step will be how to write your first <span style="color: #9ACD32; font-weight: bold;">attention</span> kernel.
+And Compare it's performance agains [Pytorch](pytorch.org)
