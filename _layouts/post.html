@@ -13,8 +13,10 @@
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <!-- Syntax highlighting - Light mode -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="light-theme-syntax">
+    <!-- Syntax highlighting - Dark mode -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="dark-theme-syntax" disabled>
     
     <style>
         :root {
@@ -228,13 +230,18 @@
         }
 
         .article-content pre {
-            background-color: var(--code-bg);
+            background-color: #f6f8fa;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 1.5rem;
             margin: 2rem 0;
             overflow-x: auto;
             font-family: 'JetBrains Mono', monospace;
+        }
+
+        [data-theme="dark"] .article-content pre {
+            background-color: #0d1117;
+            border-color: #30363d;
         }
 
         .article-content pre code {
@@ -682,27 +689,45 @@
             const body = document.body;
             const themeIcon = document.getElementById('theme-icon');
             const themeText = document.getElementById('theme-text');
+            const lightSyntax = document.getElementById('light-theme-syntax');
+            const darkSyntax = document.getElementById('dark-theme-syntax');
 
             if (body.getAttribute('data-theme') === 'dark') {
                 body.removeAttribute('data-theme');
                 themeIcon.className = 'fas fa-moon';
                 themeText.textContent = 'Dark';
                 localStorage.setItem('theme', 'light');
+                // Switch to light syntax theme
+                lightSyntax.disabled = false;
+                darkSyntax.disabled = true;
             } else {
                 body.setAttribute('data-theme', 'dark');
                 themeIcon.className = 'fas fa-sun';
                 themeText.textContent = 'Light';
                 localStorage.setItem('theme', 'dark');
+                // Switch to dark syntax theme
+                lightSyntax.disabled = true;
+                darkSyntax.disabled = false;
             }
         }
 
         // Load saved theme
         function loadTheme() {
             const savedTheme = localStorage.getItem('theme');
+            const lightSyntax = document.getElementById('light-theme-syntax');
+            const darkSyntax = document.getElementById('dark-theme-syntax');
+            
             if (savedTheme === 'dark') {
                 document.body.setAttribute('data-theme', 'dark');
                 document.getElementById('theme-icon').className = 'fas fa-sun';
                 document.getElementById('theme-text').textContent = 'Light';
+                // Enable dark syntax theme
+                lightSyntax.disabled = true;
+                darkSyntax.disabled = false;
+            } else {
+                // Ensure light syntax theme is enabled
+                lightSyntax.disabled = false;
+                darkSyntax.disabled = true;
             }
         }
 
