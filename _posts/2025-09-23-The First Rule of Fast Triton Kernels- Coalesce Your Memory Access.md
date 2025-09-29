@@ -86,7 +86,7 @@ Easisest would have been if I had to pick(same) boxes placed consecutively at `2
 
 Now Since we have understood the concept of **coalescing** the hero that supports this concept is called `Warps`. 
 
-But What is Warp?🤔
+<span style="font-size: 1.3em; font-weight: bold; color: #0e0e0eff;">But What is Warp?🤔</span>
 
 In our same Warehouse terminology **A Warp = A Small Team of 32 Workers Who Must Move Together**
 
