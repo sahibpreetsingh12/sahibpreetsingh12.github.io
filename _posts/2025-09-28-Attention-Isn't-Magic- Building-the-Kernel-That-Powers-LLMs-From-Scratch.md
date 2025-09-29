@@ -21,7 +21,7 @@ Our goal is to translate the abstract math of `softmax(QKᵀ/√d)V` into a real
 </div>
 
 Before we write the code, we need a quick mental model.
-Let's go with basic analogy of quick receipe builder.
+Let's go with basic analogy of quick recipe builder.
 
 Imagine you want to create a new flavor (the Output).
 -  <span style="color: #9ACD32; font-weight: bold;">Query</span>: You have a specific taste profile in mind. "I want something that's 80% spicy and 20% smoky." This is your Query vector.
@@ -96,9 +96,6 @@ def basic_attention_kernel(
     attn_weights = tl.exp(scores - max_score)           # Convert to positive weights
     attn_weights = tl.where(seq_mask, attn_weights, 0.0)  # Zero out unused slots
     attn_weights = attn_weights / tl.sum(attn_weights, axis=0)  # Normalize to 100%
-
-    
-    output = tl.zeros([BLOCK_SIZE_DIM], dtype=tl.float32)
 
     # 5. Second trip through warehouse - collect ingredients per recipe
     output = tl.zeros([BLOCK_SIZE_DIM], dtype=tl.float32)
@@ -309,7 +306,7 @@ but results I got are
   <img src="{{ site.baseurl }}/assets/blog-3-simple-attention/co.png" alt="cooking-analogy" style="max-width: 100%; height: auto;">
 </div>
 
-Now <span style="font-size: 1.2em; font-weight: bold; color: #ff6b35;">Why the gulf keeps on increasing as we increase seq_len and dimension we use?</span>
+Now <span style="font-size: 1.2em; font-weight: bold; color: #ff6b35;">Why the gulf keeps on increasing as we increase Sequence Length and Dimension we use?</span>
 
 Our kernel is doing two things wrong :
 
