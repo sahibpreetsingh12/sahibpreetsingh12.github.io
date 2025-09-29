@@ -55,9 +55,9 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 0 40px;
         }
 
         /* Header */
@@ -170,13 +170,13 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
 
         /* Sections */
         .section {
-            padding: 2rem 0;
+            padding: 3rem 0;
         }
 
         .section h2 {
             font-size: 2.5rem;
             font-weight: 700;
-            margin-bottom: 1rem;
+            margin-bottom: 2rem;
             display: flex;
             align-items: center;
             gap: 1rem;
@@ -185,7 +185,7 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
         .section p {
             font-size: 1.1rem;
             color: var(--text-secondary);
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
         }
 
         /* Cards */
@@ -197,29 +197,18 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
             align-items: stretch;
         }
         
-        /* Better layout for 3-card sections on larger screens */
-        @media (min-width: 1200px) {
-            .cards {
-                grid-template-columns: repeat(3, 1fr);
-                max-width: 1400px;
-                margin-left: auto;
-                margin-right: auto;
-                gap: 2.5rem;
-            }
-        }
-        
-        /* 2-column layout for medium screens */
-        @media (min-width: 900px) and (max-width: 1199px) {
+        /* Optimized 2-card layout for cleaner design */
+        @media (min-width: 900px) {
             .cards {
                 grid-template-columns: repeat(2, 1fr);
-                gap: 2.5rem;
+                max-width: 1300px;
+                margin-left: auto;
+                margin-right: auto;
+                gap: 4rem;
             }
-        }
-        
-        /* Ensure cards maintain consistent height */
-        @media (min-width: 900px) {
+            
             .elite-card {
-                min-height: 420px;
+                min-height: 480px;
             }
         }
 
@@ -227,7 +216,7 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 2rem;
+            padding: 2.5rem;
             transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
@@ -241,7 +230,7 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
 
         .card h3 {
             font-size: 1.5rem;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
             color: var(--accent-color);
         }
 
@@ -250,9 +239,10 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
             background-color: var(--code-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 1.5rem;
+            padding: 2rem;
             font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
             font-size: 0.9rem;
+            line-height: 1.8;
             margin: 1rem 0;
             overflow-x: auto;
             flex: 1;
@@ -517,14 +507,15 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
             height: 100%;
             display: flex;
             flex-direction: column;
-            min-height: 450px;
+            min-height: 480px;
+            padding: 2.5rem;
         }
 
         .card-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
             flex-shrink: 0;
         }
         
@@ -759,26 +750,6 @@ title: "Sahibpreet Singh - GenAI Consultant & ML Systems Engineer"
             <h2><i class="fas fa-code"></i> System Architecture</h2>
             
             <div class="cards">
-                <div class="card elite-card">
-                <div class="card-header">
-                    <h3>🏗️ Production Systems</h3>
-                    <div class="card-badge">Enterprise Scale</div>
-                </div>
-                <div class="code-block">
-                    <span class="code-comment"># Current production deployments</span><br>
-                    $ kubectl get pods -n agentic-rag<br>
-                    <span class="code-output">→ 15 pods running, 700K USD value delivered</span><br><br>
-                    
-                    $ az ml compute show --name databricks-cluster<br>
-                    <span class="code-output">→ 31% performance optimization achieved</span><br><br>
-                    
-                    <span class="code-comment"># Research pipeline</span><br>
-                    $ python -m triton.research.tokenizer_fertility<br>
-                    <span class="code-output">→ Novel insights published</span>
-                </div>
-                </div>
-
-                
                 <div class="card elite-card">
                 <div class="card-header">
                     <h3>⚡ Performance Stack</h3>
