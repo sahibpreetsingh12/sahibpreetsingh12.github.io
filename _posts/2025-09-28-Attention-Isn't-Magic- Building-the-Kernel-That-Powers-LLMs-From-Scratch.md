@@ -6,7 +6,7 @@ description: "From abstract math to a real GPU kernel, this post demystifies the
 category: Triton
 tags: [Triton, Attention, GPU, Performance]
 author: "Sahibpreet Singh"
-published: false
+published: true
 pinned: false
 ---
 
