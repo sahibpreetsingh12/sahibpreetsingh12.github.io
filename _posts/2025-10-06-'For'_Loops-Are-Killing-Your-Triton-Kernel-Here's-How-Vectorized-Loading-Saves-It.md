@@ -223,3 +223,9 @@ def vectorized_attention(Q, K, V, scale=None):
 ```
 
 The triton kernel the whole code above is same the changed bits as compared to last blog are `Step-4` and `Step-7` for explanation of other steps I would recommend checking my last blog.
+
+Check the full code [here](https://github.com/sahibpreetsingh12/triton-learning/tree/main/triton-attention-series/02_vectorized_attention)
+
+<div align="center">
+  <img src="{{ site.baseurl }}/assets/blog-4-vectorized-attention/vectorized_loading.png" alt="cooking-analogy" style="max-width: 100%; height: auto;">
+</div>
